@@ -1,0 +1,94 @@
+@startuml
+package Boundary_Conditions <<Rectangle>>{
+
+struct AtmCond{
++wind : Array
++angle : Array
++temp : Array
++pres : Array
++umid : Array
+..
++SetAllCostant()
+}
+
+struct BikeInfo{
++vehicle : Vehicle
++driver : Driver
++wheels : Wheel
+}
+
+struct Driver{
++name
++weight
+..
+#InputInfoFromExcel()
++InputInfoDirectly()
+}
+
+struct Vehicle{
++name
++struct_weight
++hull_weight
++frontal_area
++hand_traction : bool
++inertia
+..
+#InputInfoFromExcel()
++InputInfoDirectly()
+}
+
+struct Wheel{
++tyre
++pres
++radius
++rolling_circ
++inertia
+..
+#InputInfoFromExcel()
++InputInfoDirectly()
+}
+}
+
+package Analysis_n_Simulation <<Rectangle>>{
+class Run{
++atmospheric_conditions : AtmCond
++bike_info : BikeInfo
++run_data
+__
++InputAtmCond()
++InputBikeInfo()
++InputRun()
+}
+
+class RunAnalysis extends Run{
++run : List<Run>
+__
++AddRun()
++RmRun()
+#CheckMissingColumn()
++PlotEach()
++Comparation()
++PlotAvg()
+}
+
+class Simulation extends Run{
++run : List<Run>
+__
+#Modeling()
+#Simulate()
++Plot()
+}
+}
+
+package Util <<Rectangle>>{
+class Util{
+#some_costants
+__
++MovingAvg()
++ReadCSV()
++AvgColumn()
++StimaCoeff()
++GearChangeDetect()
+}
+}
+@enduml
