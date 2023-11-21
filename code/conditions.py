@@ -1,8 +1,6 @@
 
 class Vehicle:
-    '''
-    Contains information of a vehicle (bike)
-    '''
+    '''Contains information of a vehicle (bike)'''
     def __init__(self,name):
         self.name = name
         self.chassis_weight = None   #peso telaio
@@ -26,9 +24,7 @@ class Vehicle:
 
 
 class Wheel:
-    '''
-    Contains information of a wheel (of a bike)
-    '''
+    '''Contains information of a wheel (of a bike)'''
     def __init__(self,tyre):
         self.tyre = tyre
         self.pressure = None
@@ -49,9 +45,7 @@ class Wheel:
         self.name = name
 
 class Driver:
-    '''
-    Contains information of a driver (of a bike)
-    '''
+    '''Contains information of a driver (of a bike)'''
     def __init__(self,name):
         self.name = name
         self.weight = None
@@ -66,9 +60,7 @@ class Driver:
         self.name = name
 
 class AtmConditions:
-    '''
-    Contains information of atmospheric conditions
-    '''
+    '''Contains information of atmospheric conditions'''
     def __init__(self):
         self.temperature = None
         self.pressure = None
@@ -81,15 +73,13 @@ class AtmConditions:
         self.pressure = pressure
         self.humidity = humidity
         self.wind = wind
-        self.angle = angle   #clockwise?
+        self.angle = angle
 
     def getInfoFromCsv(self):
         pass
 
 class BikeInfo:
-    '''
-    Contains all information of Bike and Driver
-    '''
+    '''Contains all information of Bike and Driver'''
     def __init__(self,vehicle_name,driver_name,wheels_tyre):
         self.bike = Vehicle(vehicle_name)
         self.driver = Driver(driver_name)
