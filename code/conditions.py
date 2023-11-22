@@ -8,20 +8,39 @@ class Vehicle:
         self.frontal_area = None
         self.inertia = None
         self.leg_traction = None
+        self.crank = None   #pedivella
 
     def getInfoFromExcel(self):
         pass
 
-    def setInfo(self,chassis_weight,hull_weight,frontal_area,inertia,leg_traction):
+    def setInfo(self,chassis_weight,hull_weight,frontal_area,inertia,leg_traction,crank):
         self.chassis_weight = chassis_weight   #peso telaio
         self.hull_weight = hull_weight   #peso carena
         self.frontal_area = frontal_area
         self.inertia = inertia
         self.leg_traction = leg_traction
+        self.crank = crank
 
     def setName(self,name):
         self.name = name
 
+class GearBox:
+    def __init__(self, gear_box):
+        '''
+        gear_box: List of gear
+        chainring: Integer
+        sec_ratio: pair of Integers
+        '''
+        self.gear_box = gear_box
+        self.chainring = None   #moltiplica
+        self.sec_ratio = None   #secondary ratio / rimando finale
+    
+    def setInfo(self, chainring, sec_ratio):
+        self.chainring = chainring
+        self.sec_ratio = sec_ratio
+        
+    def getInfoFromExcel(self):
+        pass
 
 class Wheel:
     '''Contains information of a wheel (of a bike)'''
@@ -80,14 +99,16 @@ class AtmConditions:
 
 class BikeInfo:
     '''Contains all information of Bike and Driver'''
-    def __init__(self,vehicle_name,driver_name,wheels_tyre):
-        self.bike = Vehicle(vehicle_name)
-        self.driver = Driver(driver_name)
-        self.wheels = Wheel(wheels_tyre)
+    def __init__(self, vehicle_obj, driver_obj, wheels_obj, gear_box):
+        self.bike = vehicle_obj
+        self.driver = driver_obj
+        self.wheels = wheels_obj
+        self.gear_box = gear_box   #sprocket pack / pacco pignoni
 
     def getInfoFromExcel(self):
         self.bike.getInfoFromExcel()
         self.driver.getInfoFromExcel()
         self.wheels.getInfoFromExcel()
-
+        self.gear_box.getInfoFromExcel()
+        
 

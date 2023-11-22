@@ -46,3 +46,4 @@ def readFile(file_name):
             else:
                 data.append([element for element in row])
     return np.array(data), header
+
