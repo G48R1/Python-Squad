@@ -35,7 +35,7 @@ def readFile(file_name):
     '''
     data = []
     header = []
-    with open(file_name) as file:
+    with open(file_name,'r') as file:
         reader = csv.reader(file)
         #next(reader, None)
         head = True
@@ -47,3 +47,9 @@ def readFile(file_name):
                 data.append([element for element in row])
     return np.array(data), header
 
+def writeFile(file_name, data, header):   #TO BE MODIFIED
+    with open(file_name,'w') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerow(header)
+        for row in data:   #TO BE MODIFIED
+            writer.writerow(row)

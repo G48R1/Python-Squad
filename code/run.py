@@ -1,5 +1,6 @@
-import conditions as cond
+from conditions import *
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import util
 import os
@@ -18,7 +19,9 @@ class Run:
         self.atm_cond = None
         self.bike_info = None
         self.run_data = None
-        self.header = None
+        self.header = None   #header of csv file
+        self.n_data = None   #length of run_data
+        self.disp = None   #displacement / dissipation factor
 
     def setAtmCond(self, atm_cond):
         '''atm_cond: AtmConditions Object'''
@@ -40,86 +43,103 @@ class Run:
         # self.run_data['altitude'] = pd.to_numeric(self.run_data['altitude'])
         
         #self.run_data["speed"] = self.data["speed"]/3.6   #conversion from km/h to m/s
-        #n = len(self.run_data)
+        self.n_data = len(self.run_data)
         #self.run_data["torq"] =self.run_data["Power"]*60/self.data["Cadence"] # wheel or pedal rpm? (here pedal)
         #self.run_data["wheel rpm"]=self.run_data["Cadence"]
         
     def gearChangeDetect(self, initial_gear=1):
         '''initial_gear: Integer'''
-        L = len(self.run_data['cadence'])
-        self.run_data['gear'] = np.zeros(L)
-        self.run_data['gear'] = pd.to_numeric(self.run_data['gear'],downcast='integer')
-        self.run_data.at[0,'gear'] = initial_gear
+        #initializing variables
+        rd = self.run_data
+        bi = self.bike_info
+        L = self.n_data
+        rd['gear'] = np.ones(L)
+        rd['gear'] = pd.to_numeric(rd['gear'],downcast='integer')
+        rd.at[0,'gear'] = initial_gear
+        rd['RPMw_bo_RPMp'] = np.ones(L)   #RPM wheel based on RPM pedal
+        self.run_data['RPMw_bo_RPMp'] = pd.to_numeric(rd['RPMw_bo_RPMp'])
+        max_gear = len(bi.gear_box.gear_box)
 
-        RPM_wheel_to_RPM_pedal = np.zeros(L)
-        max_gear = len(self.bike_info.gear_box.gear_box)
+        #set first value of 'gear' and 'RPMw_bo_RPMp'
+        T = bi.gear_box.gear_box[rd.at[0,'gear']-1]
+        rd.at[0,'RPMw_bo_RPMp'] = rd.at[0,'cadence']*(bi.gear_box.chainring/T)*(bi.gear_box.sec_ratio[0]/bi.gear_box.sec_ratio[1])
 
-        for i in np.arange(len(self.run_data['cadence'])-2)+1:
-            coeff = 0.95 #+ 0.02*(self.run_data.at[i-1,'gear']/max_gear)**2   #variable depending on the gear (>gear  -->  >coeff)
-            if self.run_data.at[i,'cadence'] < self.run_data.at[i-1,'cadence']*coeff and self.run_data.at[i+1,'cadence']>=self.run_data.at[i,'cadence']*0.98:
-                self.run_data.at[i,'gear'] = self.run_data.at[i-1,'gear'] + 1
+        #calculating values of 'gear' and 'RPMw_bo_RPMp' (from 1 to n_data-3)
+        for i in np.arange(self.n_data-3)+1:
+            coeff1 = 0.95 #+ 0.02*(rd.at[i-1,'gear']/max_gear)**2   #variable depending on the gear (>gear  -->  >coeff)
+            coeff2 = 0.98
+            if rd.at[i,'cadence'] < rd.at[i-1,'cadence']*coeff1 and rd.at[i+2,'cadence']>=rd.at[i+1,'cadence']*coeff2:
+                rd.at[i,'gear'] = rd.at[i-1,'gear'] + 1
             else:
-                self.run_data.at[i,'gear'] = self.run_data.at[i-1,'gear']
-            T = self.bike_info.gear_box.gear_box[self.run_data.at[i,'gear']]
-            RPM_wheel_to_RPM_pedal[i] = self.run_data.at[i,'cadence']*self.bike_info.gear_box.chainring/T*self.bike_info.gear_box.sec_ratio[0]/self.bike_info.gear_box.sec_ratio[1]
+                rd.at[i,'gear'] = rd.at[i-1,'gear']
+            T = bi.gear_box.gear_box[rd.at[i,'gear']-1]
+            rd.at[i,'RPMw_bo_RPMp'] = rd.at[i,'cadence']*(bi.gear_box.chainring/T)*(bi.gear_box.sec_ratio[0]/bi.gear_box.sec_ratio[1])
 
-        self.run_data.at[len(self.run_data['cadence'])-1,'gear'] = self.run_data.at[len(self.run_data['cadence'])-2,'gear']
-        T = self.bike_info.gear_box.gear_box[self.run_data.at[len(self.run_data['cadence'])-1,'gear']]
-        RPM_wheel_to_RPM_pedal[-1] = self.run_data.at[len(self.run_data['cadence'])-1,'cadence']*self.bike_info.gear_box.chainring/T*self.bike_info.gear_box.sec_ratio[0]/self.bike_info.gear_box.sec_ratio[1]
+        #set last 2 values of 'gear' and 'RPMw_bo_RPMp'
+        rd.at[self.n_data-2,'gear'] = rd.at[self.n_data-3,'gear']
+        T = bi.gear_box.gear_box[rd.at[self.n_data-2,'gear']-1]   #theet of the sprockets / denti dei pignoni
+        rd.at[self.n_data-2,'RPMw_bo_RPMp'] = rd.at[self.n_data-2,'cadence']*(bi.gear_box.chainring/T)*(bi.gear_box.sec_ratio[0]/bi.gear_box.sec_ratio[1])
+        rd.at[self.n_data-1,'gear'] = rd.at[self.n_data-2,'gear']
+        T = bi.gear_box.gear_box[rd.at[self.n_data-1,'gear']-1]   #theet of the sprockets / denti dei pignoni
+        rd.at[self.n_data-1,'RPMw_bo_RPMp'] = rd.at[self.n_data-1,'cadence']*(bi.gear_box.chainring/T)*(bi.gear_box.sec_ratio[0]/bi.gear_box.sec_ratio[1])
 
-        self.run_data['ideal_speed'] = RPM_wheel_to_RPM_pedal*self.bike_info.wheels.radius*(np.pi/30)*3.6
+        #calculating 'ideal_speed'
+        rd['ideal_speed'] = rd['RPMw_bo_RPMp']*bi.wheels.radius*(np.pi/30)*3.6
+        
+        #calculating the dissipation factor
+        self.disp = np.mean(abs(rd['speed'] - rd['ideal_speed']) / rd['speed'])
+    
+    def setBounds(self, lwbd = 2, upbd = None, all = False):   #actually the option 'all' it's not necessary
+        '''set upper and lower limits of data (Trust-based) / limiti basati sulla attendibilità
+        starting from 0 to n_data-1
+        lwbd: Iterator (uInt)
+        upbd: Iterator (uInt)
+        all: Bool'''
+        if all == True:
+            lwbd = 0
+            upbd = self.n_data
+        else:
+            if upbd == None:
+                upbd = self.n_data - 2
+            lwbd = max(lwbd,0)
+            upbd = min(upbd,self.n_data)
+        
+        #changing data directly
+        data = self.run_data.iloc[lwbd:upbd].values   #selecting the new bounded dataset
+        names = self.run_data.columns.values   #getting the names of the columns
+        self.run_data = pd.DataFrame(data,columns=names)
+        self.n_data = len(self.run_data)
+        #return self.run_data.iloc[lwbd:upbd]
+
+    def exportCols(self, file_name, cols, rows = None):
+        '''
+        file_name: String
+        rows: list of Iterator (uInt) [Default: all]
+        cols: List of index (String/column name)
+        '''
+        if rows == None:
+            rows = np.arange(self.n_data)
+        util.writeFile(file_name, self.run_data.iloc[rows][cols].values, cols)
 
 class RunAnalysis:
     
     def __init__(self):
-        self.run_list = []
-        self.runs_id = []
+        self.run_list = {}   #dictionary
     
     def addRun(self, run):
         '''run: Run Object'''
-        if run.id_run not in self.runs_id:
-            self.run_list.append(run)
-            self.runs_id.append(run.id_run)
+        if run.id_run not in self.run_list:
+            self.run_list[run.id_run] = run
+        else:
+            print("run "+run.id_run+" already uploaded")
         
     def rmRun(self, id_run):
         '''id_run: String'''
-        for i in len(self.run_list):
-            if self.run_list[i].id_run == id_run:
-                self.run_list.pop(i)
-                self.runs_id.pop(i)
+        self.run_list.pop(id_run,'Not found')
 
-    def plotEach(self, export):
+    def plotEach(self, export=False):
         '''export: Bool'''
         for run in self.run_list:
             pass            
 
-
-## main di prova ##
-
-run1 = Run()
-file_name = "../Dataset/Matilde_13_09_2023_AM.csv"
-run1.readRun(file_name)
-gb1 = cond.GearBox([40,35,31,27,24,21,19,17,15,14,13,12])
-gb1.setInfo(chainring=108, sec_ratio=[38,18])
-wl1 = cond.Wheel("Michelin-blue")
-wl1.setInfo(None,0.23157,None,None)
-bk1 = cond.BikeInfo(cond.Vehicle("Phoenix"),cond.Driver("Matilde"),wl1,gb1)
-run1.setBikeInfo(bk1)
-#print(run1.run_data['speed'])
-# print(run1.id_run)
-run1.gearChangeDetect()
-print(run1.run_data['gear'])
-#print(run1.run_data['ideal_speed'])
-#print(run1.run_data['speed'])
-
-run2 = Run()
-file_name = "../Dataset/Diego_15_09_2023_AM_2.csv"
-run2.readRun(file_name)
-#print(run2.run_data['speed'])
-print(run2.id_run)
-
-an_run = RunAnalysis()
-an_run.addRun(run1)
-an_run.addRun(run2)
-print(an_run.runs_id)
 

@@ -1,7 +1,8 @@
 
 class Vehicle:
     '''Contains information of a vehicle (bike)'''
-    def __init__(self,name):
+    def __init__(self,name=None):
+        '''name: String'''
         self.name = name
         self.chassis_weight = None   #peso telaio
         self.hull_weight = None   #peso carena
@@ -14,6 +15,13 @@ class Vehicle:
         pass
 
     def setInfo(self,chassis_weight,hull_weight,frontal_area,inertia,leg_traction,crank):
+        '''
+        chassis_weight: Float
+        hull_weight: Float
+        frontal_area: Float
+        inertia: Float
+        leg_traction: Bool
+        crank: Float (length)'''
         self.chassis_weight = chassis_weight   #peso telaio
         self.hull_weight = hull_weight   #peso carena
         self.frontal_area = frontal_area
@@ -22,6 +30,7 @@ class Vehicle:
         self.crank = crank
 
     def setName(self,name):
+        '''name: String'''
         self.name = name
 
 class GearBox:
@@ -36,6 +45,10 @@ class GearBox:
         self.sec_ratio = None   #secondary ratio / rimando finale
     
     def setInfo(self, chainring, sec_ratio):
+        '''
+        chainring: Int (number of theet)
+        sec_ratio: 2D Iterable (number of theet, es. [greatest, lowest])
+        '''
         self.chainring = chainring
         self.sec_ratio = sec_ratio
         
@@ -44,7 +57,7 @@ class GearBox:
 
 class Wheel:
     '''Contains information of a wheel (of a bike)'''
-    def __init__(self,tyre):
+    def __init__(self,tyre=None):
         self.tyre = tyre
         self.pressure = None
         self.radius = None
@@ -55,6 +68,12 @@ class Wheel:
         pass
 
     def setInfo(self,pressure,radius,rolling_circum,inertia):
+        '''
+        pressure: Float
+        radius: Float
+        rolling_circum: Float
+        inertia: Float
+        '''
         self.pressure = pressure
         self.radius = radius
         self.rolling_circum = rolling_circum
@@ -65,7 +84,7 @@ class Wheel:
 
 class Driver:
     '''Contains information of a driver (of a bike)'''
-    def __init__(self,name):
+    def __init__(self,name=None):
         self.name = name
         self.weight = None
 
@@ -73,9 +92,11 @@ class Driver:
         pass
 
     def setInfo(self,weight):
+        '''weight: Float'''
         self.weight = weight
 
     def setName(self,name):
+        '''name: String'''
         self.name = name
 
 class AtmConditions:
@@ -88,6 +109,13 @@ class AtmConditions:
         self.angle = None   #clockwise?
 
     def setInfo(self,temperature,pressure,humidity,wind,angle):
+        '''
+        temperature: Iterable of Float
+        pressure: Iterable of Float
+        humidity,: Iterable of Float
+        wind: Iterable of Float
+        angle: Iterable of Float
+        '''
         self.temperature = temperature
         self.pressure = pressure
         self.humidity = humidity
