@@ -33,7 +33,7 @@ run1.gearChangeDetect()
 run1.exportCols("prova1.csv", ['gear', 'speed'])
 # print(run1.run_data.iloc[0:7][['speed','gear','RPMw_bo_RPMp','ideal_speed']])
 # print(run1.run_data[['speed','gear','cadence','RPMw_bo_RPMp','ideal_speed']])
-print(run1.disp)
+# print(run1.disp)
 
 
 run2 = Run()
@@ -55,12 +55,29 @@ run2.gearChangeDetect()
 # run2.exportCols("prova2.csv", ['gear', 'speed'])
 # print(run2.run_data.iloc[0:7][['speed','gear','RPMw_bo_RPMp','ideal_speed']])
 # print(run2.run_data[['speed','gear','cadence','RPMw_bo_RPMp','ideal_speed']])
-print(run2.disp)
+# print(run2.disp)
+
+run3 = Run()
+file_name = "../Dataset/Diego_13_09_2023_AM_2.csv"
+run3.readRun(file_name)
+
+gb3 = GearBox([32,28,24,21,19,17,15])
+gb3.setInfo(chainring=60, sec_ratio=[54,17])
+wl3 = Wheel("Michelin-blue")
+wl3.setInfo(None,0.23157,None,None)
+bk3 = BikeInfo(Vehicle("Cerberus"),Driver("Diego"),wl3,gb3)
+run3.setBikeInfo(bk3)
+# print(run3.run_data.columns.values)
+# run3.setBounds(15,30)
+run3.gearChangeDetect()
+
 
 
 an_run = RunAnalysis()
-an_run.addRun(run1)
+an_run.addRun(run3)
 an_run.addRun(run2)
 print(an_run.run_list.keys())
 an_run.rmRun("prova")
 print(an_run.run_list.keys())
+# an_run.plotEach()
+an_run.comparation() #keys=["Diego_15_09_2023_AM_2.csv","Diego_13_09_2023_AM_2.csv"],cols=["speed","ideal_speed","power"])

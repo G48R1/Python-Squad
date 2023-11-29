@@ -36,17 +36,30 @@ class Run:
         self.id_run = file_name.rsplit('/',1)[-1]   #extraction of file name from path
         data, self.header = util.readFile(file_name)
         self.run_data = pd.DataFrame(data, columns = self.header)
+        self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
         self.run_data['cadence'] = pd.to_numeric(self.run_data['cadence'])
         self.run_data['speed'] = pd.to_numeric(self.run_data['speed'])
         self.run_data['power'] = pd.to_numeric(self.run_data['power'])
-        # self.run_data['distance'] = pd.to_numeric(self.run_data['distance'])
-        # self.run_data['altitude'] = pd.to_numeric(self.run_data['altitude'])
+        self.run_data['distance'] = pd.to_numeric(self.run_data['distance'])
+        if "heart_rate" in self.run_data.columns.values:
+            self.run_data['heart_rate'] = pd.to_numeric(self.run_data['heart_rate'])
+        if "temperature" in self.run_data.columns.values:
+            self.run_data['temperature'] = pd.to_numeric(self.run_data['temperature'])
+        if "altitude" in self.run_data.columns.values:
+            self.run_data['altitude'] = pd.to_numeric(self.run_data['altitude'])
         
         #self.run_data["speed"] = self.data["speed"]/3.6   #conversion from km/h to m/s
         self.n_data = len(self.run_data)
         #self.run_data["torq"] =self.run_data["Power"]*60/self.data["Cadence"] # wheel or pedal rpm? (here pedal)
         #self.run_data["wheel rpm"]=self.run_data["Cadence"]
         
+    def addCol(self, col_name, col):
+        '''col: List of data'''
+        if len(col) == self.n_data:
+            self.run_data[col_name] = col
+        else:
+            print("length not equal: ",len(col)," not equal to ",self.n_data)
+    
     def gearChangeDetect(self, initial_gear=1):
         '''initial_gear: Integer'''
         #initializing variables
@@ -139,7 +152,49 @@ class RunAnalysis:
 
     def plotEach(self, export=False):
         '''export: Bool'''
-        for run in self.run_list:
-            pass            
+        for run in self.run_list.values():
+            plt.plot(run.run_data["distance"],run.run_data["speed"],label="GPS speed")
+            if "ideal_speed" in run.run_data.columns.values:
+                plt.plot(run.run_data["distance"],run.run_data["ideal_speed"],label="ideal speed")
+            plt.plot(run.run_data["distance"],run.run_data["power"],label="power")
+            if "heart_rate" in run.run_data.columns.values:
+                plt.plot(run.run_data["distance"],run.run_data["heart_rate"],label="heart rate")
+            plt.title("Data")
+            plt.legend()
+            plt.show()
 
+    def comparation(self, keys=None, cols=[]):
+        '''
+        allows to comparate data (specified in cols) of two or more races (listed in keys)
+        keys: List of String (run ID)  default: all
+        cols: List of index (String/column name)  default: all
+        '''
+        cols0 = cols
+        if keys == None:
+            keys = self.run_list.keys()
+        for i, key in enumerate(keys):
+            run = self.run_list.get(key)
+            id = " run "+ str(i+1)
+            if cols0 == []:
+                cols = run.run_data.columns.values
+                cols = np.delete(cols, np.where(cols == "timestamp"))
+                cols = np.delete(cols, np.where(cols == "distance"))
+            for col in cols:
+                plt.plot(run.run_data["distance"],run.run_data[col],label=col+id)
+        plt.title("Comparation")
+        plt.legend()
+        plt.show()
 
+    def calcAvgRun(self):
+        '''calculate average run'''
+        if not self.run_list:
+            print("no run in run_list")
+            return
+        rlv = self.run_list.values
+        avg_run = Run()
+        avg_run.id_run = "avg_run"
+        avg_run.run_data = rlv[0].run_data
+        for run in rlv[1:]:
+            for col in run.run_data.columns.values:   #TODO check if col not exist yet
+                avg_run.run_data[col] = (avg_run.run_data[col] + run.run_data[col])/2   # ?? check
+        self.addRun(avg_run)
