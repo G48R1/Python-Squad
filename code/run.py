@@ -139,7 +139,13 @@ class RunAnalysis:
 
     def plotEach(self, export=False):
         '''export: Bool'''
-        for run in self.run_list:
-            pass            
-
+        for run in self.run_list.values():
+            plt.plot(run.run_data["distance"],run.run_data["speed"], label="GPS speed")
+            plt.plot(run.run_data["distance"],run.run_data["ideal_speed"],label="ideal speed")
+            plt.plot(run.run_data["distance"],run.run_data["power"],label="power")
+            if "heart_rate" in run.run_data.columns.values:
+                plt.plot(run.run_data["distance"],run.run_data["heart_rate"], label="heart_rate")
+            plt.title("Data")
+            plt.legend()
+            plt.show()
 
