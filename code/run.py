@@ -71,6 +71,10 @@ class Run:
         self.avg_power = np.mean(self.run_data["power"])
         self.dev_power = np.std(self.run_data["power"])
         self.calcAvgValues()
+
+    def rescale(self, col="altitude", min_bd=50):
+        min = np.min(self.run_data[col])
+        return self.run_data[col] - min + min_bd
         
     def addCol(self, col_name, col):
         '''col: List of data'''
@@ -174,7 +178,7 @@ class Run:
             rows = np.arange(self.n_data)
         util.writeFile(file_name, self.run_data.iloc[rows][cols].values, cols)
     
-    def plot(self, cols=[]):
+    def plot(self, cols=[], alt_min_bd=50):
         '''
         cols: List of index (String/column name)  default: all
         '''
@@ -182,7 +186,10 @@ class Run:
             cols = ["speed", "ideal_speed", "power", "heart_rate"]
         for col in cols:
             if col in self.run_data.columns.values:
-                plt.plot(self.run_data["distance"],self.run_data[col],label=col)
+                if col=='altitude':
+                    plt.plot(self.run_data["distance"],self.rescale(col,alt_min_bd),label=col)
+                else:
+                    plt.plot(self.run_data["distance"],self.run_data[col],label=col)
         plt.title("Data: run "+self.id_run)
         plt.legend()
         plt.show()
@@ -273,6 +280,11 @@ class RunAnalysis:
         self.model = None
         self.model_data = None
         self.prediction = None
+        self.dict_opts = {
+            "def": [["speed","power"],["altitude","heart_rate"]],
+            "Diego": [["speed","power"],["altitude","heart_rate"],["speed","ideal_speed"]],
+            "Matilde": [["speed","power"],["heart_rate"]]
+        }
     
     def addRun(self, run):
         '''run: Run Object'''
@@ -303,29 +315,63 @@ class RunAnalysis:
             if export == True:
                 run.export()
 
-    def comparation(self, keys=None, cols=[], fig="sep"):
+    def comparation(self, keys=None, cols=[], opts="def", export=False):
         '''
         allows to comparate data (specified in cols) of two or more races (listed in keys)
         keys: List of String (run ID)  default: all
-        cols: List of index (String/column name)  default: all
-        fig: "sep", "
+        cols: List of List of Index (String/column name)  default: all
+        opts: "def", "Diego", "Matilde"
         '''
-        cols0 = cols
+        if cols==[]:
+            cols = self.dict_opts[opts]
         if not bool(keys):
             keys = self.run_list.keys()
-        for i, key in enumerate(keys):
-            run = self.run_list.get(key)
-            id = " run "+ str(i+1)
-            if cols0 == []:
-                cols = run.run_data.columns.values
-                cols = np.delete(cols, np.where(cols == "timestamp"))
-                cols = np.delete(cols, np.where(cols == "distance"))
-            for col in cols:
-                plt.plot(run.run_data["distance"],run.run_data[col],label=col+id)
-        plt.title("Comparation")
-        plt.legend()
-        plt.show()
+        if export==True:
+            pdf = PdfPages("comparation"+".pdf")
+        for plot in cols:
+            flag = False
+            for i, key in enumerate(keys):
+                run = self.run_list.get(key)
+                id = " run "+ str(i+1)
+                for col in plot:
+                    if col in run.run_data.columns.values:
+                        flag = True
+                        if col=="altitude":
+                            plt.plot(run.run_data["distance"],run.rescale(col),label=col+id)
+                        else:
+                            plt.plot(run.run_data["distance"],run.run_data[col],label=col+id)
+            if flag==True:
+                plt.title("Comparation")
+                plt.legend()
+                if export==True:
+                    pdf.savefig(bbox_inches='tight', pad_inches=0.5)
+                plt.show()
+                plt.close()
+        if export==True:
+            pdf.close()
 
+    # def export(self):
+    #     # Create an PdfPages object to save multiple plots in a single PDF
+    #     with PdfPages(self.id_run+'.pdf') as pdf:
+    #         plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
+    #         if "ideal_speed" in self.run_data.columns.values:
+    #             plt.plot(self.run_data["distance"],self.run_data["ideal_speed"],label="ideal speed")
+    #         plt.plot(self.run_data["distance"],self.run_data["power"],label="power")
+    #         max_power = max(self.run_data["power"])*np.ones(self.n_data)
+    #         plt.plot(self.run_data["distance"],max_power,label="power max",alpha=0.5)
+    #         plt.title("Data: run "+self.id_run)
+    #         plt.legend()
+    #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
+    #         plt.close()
+    #         if "heart_rate" in self.run_data.columns.values:
+    #             plt.plot(self.run_data["distance"],self.run_data["heart_rate"],label="heart rate")
+    #         plt.title("Data: run "+self.id_run)
+    #         plt.legend()
+    #         # Save plot in the PDF file
+    #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
+    #         plt.close()
+
+        
     def calcAvgRun(self):   #da controllare se sono di lunghezze diverse
         '''calculate average run'''
         if not self.run_list:
@@ -441,7 +487,7 @@ class RunAnalysis:
             input_values = pd.DataFrame(tmp)
             
         if not input_values.columns.equals(pd.Index(self.model_data)):
-            print("Index must match")
+            print("Columns must match")
             return
 
         simulated_data = input_values
