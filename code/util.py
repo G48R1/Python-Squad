@@ -29,25 +29,44 @@ def moving_average(vector, filt, amplitude=3, opts='same'):
     #rd_len = int(np.size(V,axis=0))   # reduced length
     return V   #, rd_len
 
-def readFile(file_name):
+# def readFile(file_name):
+#     '''read csv file function
+#     file_name: String (Path of the file)
+#     return: ndArray, header
+#     '''
+#     data = []
+#     header = []
+#     with open(file_name,'r') as file:
+#         reader = csv.reader(file)
+#         #next(reader, None)
+#         head = True
+#         for row in reader:
+#             if head == True:
+#                 header=[str(element) for element in row]
+#                 head = False
+#             else:
+#                 data.append([element for element in row])
+#     return np.array(data), header
+
+def readCsvFile(file_name, header=False, delimiter=','):
     '''read csv file function
     file_name: String (Path of the file)
+    return: ndArray, list (header)
     '''
     data = []
-    header = []
+    head = []
     with open(file_name,'r') as file:
-        reader = csv.reader(file)
+        reader = csv.reader(file,delimiter=delimiter)
         #next(reader, None)
-        head = True
         for row in reader:
-            if head == True:
-                header=[str(element) for element in row]
-                head = False
+            if header == True:
+                head=[str(element) for element in row]
+                header = False
             else:
                 data.append([element for element in row])
-    return np.array(data), header
+    return np.array(data), head
 
-def writeFile(file_name, data, header):   #TO BE MODIFIED
+def writeCsvFile(file_name, data, header):   #TODO TO BE MODIFIED
     with open(file_name,'w') as file:
         writer = csv.writer(file, delimiter=',')
         writer.writerow(header)

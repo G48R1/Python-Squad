@@ -26,14 +26,14 @@ def go():
     run = Run()
     vhc = Vehicle()
     dr = Driver()
-    wl = Wheel()
+    wl = Wheels()
     gb = GearBox()
     ######################################################################
     # inserire valori negli oggetti
     # conversione della gear box in lista tramite separatore ',' o ' '
     ######################################################################
     run.readRun(file_path)
-    bk = BikeInfo(vhc,dr,wl,gb)
+    bk = BikeInfo().setInfo(vhc,dr,wl,gb)
     run.setBikeInfo(bk)
     run.gearChangeDetect()
     closeWindow(root)

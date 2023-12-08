@@ -26,38 +26,41 @@ class Run:
         '''
         self.id_run = None
         self.atm_cond = None
-        self.bike_info = None
+        self.bike_info = BikeInfo()
         self.run_data = None
         self.header = None   #header of csv file
         self.n_data = None   #length of run_data
         self.disp = None   #displacement / dissipation factor
-        self.avg_power = None
-        self.dev_power = None
         self.avg_values = {}
-        # self.poly = None
-        # self.model = None
-        # self.model_data = None
-        # self.prediction = None
 
     def setAtmCond(self, atm_cond):
-        '''atm_cond: AtmConditions Object'''
+        '''
+        atm_cond: AtmConditions Object
+        set atmospheric conditions
+        '''
         self.stm_cond = atm_cond
     
     def setBikeInfo(self, bike_info):
-        '''bike_info: BikeInfo Object'''
+        '''
+        bike_info: BikeInfo Object
+        set bike info
+        '''
         self.bike_info = bike_info
 
     def readRun(self, file_name):
-        '''file_name: String (Path)'''
+        '''
+        file_name: String (Path)
+        read csv file with run data and save them
+        '''
         self.id_run = file_name.rsplit('/',1)[-1]   #extraction of file name from path
-        data, self.header = util.readFile(file_name)
+        data, self.header = util.readCsvFile(file_name, header=True)
         self.run_data = pd.DataFrame(data, columns = self.header)
         self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
         self.run_data['cadence'] = pd.to_numeric(self.run_data['cadence'])
         self.run_data['speed'] = pd.to_numeric(self.run_data['speed'])
         self.run_data['power'] = pd.to_numeric(self.run_data['power'])
         self.run_data['distance'] = pd.to_numeric(self.run_data['distance'])
-        if "heart_rate" in self.run_data.columns.values:
+        if "heart_rate" in self.run_data.columns.values:   #we could check all the values
             self.run_data['heart_rate'] = pd.to_numeric(self.run_data['heart_rate'])
         if "temperature" in self.run_data.columns.values:
             self.run_data['temperature'] = pd.to_numeric(self.run_data['temperature'])
@@ -67,17 +70,26 @@ class Run:
         #self.run_data["speed"] = self.data["speed"]/3.6   #conversion from km/h to m/s
         self.n_data = len(self.run_data)
         #self.run_data["torq"] =self.run_data["Power"]*60/self.data["Cadence"] # wheel or pedal rpm? (here pedal)
-        #self.run_data["wheel rpm"]=self.run_data["Cadence"]
         self.avg_power = np.mean(self.run_data["power"])
         self.dev_power = np.std(self.run_data["power"])
         self.calcAvgValues()
+        self.gearChangeDetect()   #comment this line if there isn't enough bike info
 
     def rescale(self, col="altitude", min_bd=50):
+        '''
+        col: String (Index)
+        min_bd: Int ["min bound"]
+        rescale values in col in the way the min value is min_bd
+        '''
         min = np.min(self.run_data[col])
         return self.run_data[col] - min + min_bd
         
     def addCol(self, col_name, col):
-        '''col: List of data'''
+        '''
+        col_name: String
+        col: List of data
+        add a column inside the dataset
+        '''
         if len(col) == self.n_data:
             self.run_data[col_name] = col
         else:
@@ -85,6 +97,9 @@ class Run:
         self.calcAvgValues()
     
     def calcAvgValues(self):
+        '''
+        calculate average values of each column except for "timestamp" and "distance"
+        '''
         cols = self.run_data.columns.values
         cols = np.delete(cols, np.where(cols == "timestamp"))
         cols = np.delete(cols, np.where(cols == "distance"))
@@ -94,14 +109,16 @@ class Run:
             self.avg_values["std_"+index] = np.std(self.run_data[index])
     
     def gearChangeDetect(self, initial_gear=1):
-        '''initial_gear: Integer
-        compulsary:
+        '''
+        initial_gear: Integer
+        detect the gear change and calculate the ideal speed
+        necessary:
         run_data [cadence, speed]
         bike_info
         {
-            vehicle [None]
+            bike [None]
             driver [None]
-            wheel [radius]
+            wheels [radius]
             gear_box [gear_box (list), chainring, sec_ratio]
         }
         '''
@@ -146,20 +163,22 @@ class Run:
         self.disp = np.mean(abs(rd['speed'] - rd['ideal_speed']) / rd['speed'])
     
     def setBounds(self, lwbd = 2, upbd = None, all = False):   #actually the option 'all' it's not necessary
-        '''set upper and lower limits of data (Trust-based) / limiti basati sulla attendibilità
+        '''
+        lwbd: Int
+        upbd: Int
+        all: Bool
+        set upper and lower limits of data (Trust-based) / limiti basati sulla attendibilità
         starting from 0 to n_data-1
-        lwbd: Iterator (uInt)
-        upbd: Iterator (uInt)
-        all: Bool'''
+        '''
         if all == True:
             lwbd = 0
-            upbd = self.n_data
+            upbd = 0
         else:
             if not bool(upbd):
-                upbd = self.n_data - 2
+                upbd = 2
             lwbd = max(lwbd,0)
-            upbd = min(upbd,self.n_data)
-        
+            upbd = max(upbd,0)
+        upbd = self.n_data - upbd        
         #changing data directly
         data = self.run_data.iloc[lwbd:upbd].values   #selecting the new bounded dataset
         names = self.run_data.columns.values   #getting the names of the columns
@@ -167,20 +186,24 @@ class Run:
         self.n_data = len(self.run_data)
         #return self.run_data.iloc[lwbd:upbd]
         self.calcAvgValues()
+        self.gearChangeDetect()
 
     def exportCols(self, file_name, cols, rows = None):
         '''
         file_name: String
         rows: list of Iterator (uInt) [Default: all]
         cols: List of index (String/column name)
+        export some cols in a csv file
         '''
         if rows == None:
             rows = np.arange(self.n_data)
-        util.writeFile(file_name, self.run_data.iloc[rows][cols].values, cols)
+        util.writeCsvFile(file_name, self.run_data.iloc[rows][cols].values, cols)
     
     def plot(self, cols=[], alt_min_bd=50):
         '''
-        cols: List of index (String/column name)  default: all
+        cols: List of index (String/column name)  default: ["speed", "ideal_speed", "power", "heart_rate"]
+        alt_min_bd: int [min bound of rescaled altitude]
+        plot the graphs of specific or default cols
         '''
         if cols == []:
             cols = ["speed", "ideal_speed", "power", "heart_rate"]
@@ -195,6 +218,9 @@ class Run:
         plt.show()
     
     def export(self):
+        '''
+        export PDF with graphs of principal cols
+        '''
         # Create an PdfPages object to save multiple plots in a single PDF
         with PdfPages(self.id_run+'.pdf') as pdf:
             plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
@@ -215,62 +241,22 @@ class Run:
             pdf.savefig(bbox_inches='tight', pad_inches=0.5)
             plt.close()
     
-    def generatePower(self, avg_power=None, dev_power=None, dev_power_perc=None):   #da scrivere generica per ogni grandezza
-        if not bool(avg_power):
-            avg_power = self.avg_power
-        if not bool(dev_power):
-            dev_power = self.dev_power
-        if not bool(dev_power_perc):
-            dev_power_perc = dev_power/avg_power
-        scatter_factor = (1-dev_power_perc) + (2*dev_power_perc)*np.random.random(self.n_data)
-        return scatter_factor*avg_power
-    
-    # def modeling(self, degree=2, input_value="power", output_value="speed"):
-    #     #######################################################
-        
-        
-    #     #######################################################
-    #     pass
-    
-    # def modelingOld(self, degree=2, input_values=["power"], output_value="speed"):
-    #     # Create a second-degree polynomial regression model
-    #     self.model = make_pipeline(PolynomialFeatures(degree), LinearRegression())
-    #     # Extract feature (X) and target (y) columns
-    #     input_values = self.run_data[input_values]
-    #     output_values = self.run_data[output_value]
-    #     # Train the model
-    #     self.model.fit(input_values, output_values)
-        
-    #     # if power == None:
-    #     #     power = self.generatePower()
-    #     # sys = self.run_data[["speed","power"]]
-    #     # nx = 1
-    #     # model = NFourSID(sys, output_columns=["speed"], input_columns=["power"], num_block_rows=nx)
-    #     # model.subspace_identification()
-    #     # figsize = (1.3 * FIGSIZE, FIGSIZE)
-    #     # fig, ax = plt.subplots()
-    #     # model.plot_eigenvalues(ax)
-    #     # fig.tight_layout()
-    #     # plt.show()
-    #     # plt.plot(self.run_data["distance"], model.y_array)
-    #     # plt.plot(self.run_data["distance"], self.run_data["speed"])
-    #     # plt.show()
-        
-    #     #sim_speed = power*
-    #     #plt.plot(self.run_data["distance"], )
-    
-    # def simulation(self, power=None, plot_real_speed=False):
-    #     if not bool(power):
-    #         power = self.generatePower()
-
-    #     # make predictions on new power data
-    #     new_data = pd.DataFrame({'power': power})
-    #     predicted_speed = self.model.predict(new_data[['power']])
-    #     plt.plot(self.run_data["distance"], predicted_speed)
-    #     if plot_real_speed==True:
-    #         plt.plot(self.run_data["distance"], self.run_data["speed"])
-    #     plt.ylim(bottom=0)
-    #     plt.show()
+    def generateCol(self, col="power", avg_value=None, std_value=None, std_perc=None):
+        '''
+        col: String (Index) default: power
+        avg_value: Float
+        std_value: Float
+        std_perc: Float
+        generate a random column with specified mean, standard deviation and/or percentage standard deviation
+        '''
+        if not bool(avg_value):
+            avg_value = self.avg_values[col]
+        if not bool(std_value):
+            std_value = self.avg_values["std_"+col]
+        if not bool(std_perc):
+            std_perc = std_value/avg_value
+        scatter_factor = (1-std_perc) + (2*std_perc)*np.random.random(self.n_data)
+        return scatter_factor*avg_value
 
 class RunAnalysis:
     
@@ -283,24 +269,32 @@ class RunAnalysis:
         self.dict_opts = {
             "def": [["speed","power"],["altitude","heart_rate"]],
             "Diego": [["speed","power"],["altitude","heart_rate"],["speed","ideal_speed"]],
-            "Matilde": [["speed","power"],["heart_rate"]]
+            "Matilde": [["speed","power"],["heart_rate"]],
+            "Enzo": [["speed","power"],["speed","ideal_speed"]]
         }
     
     def addRun(self, run):
-        '''run: Run Object'''
+        '''
+        run: Run Object
+        add a Run object to the dictionary
+        '''
         if run.id_run not in self.run_list:
             self.run_list[run.id_run] = run
         else:
             print("run "+run.id_run+" already uploaded")
         
     def rmRun(self, id_run):
-        '''id_run: String'''
+        '''
+        id_run: String
+        remove a Run object from the dictionary
+        '''
         self.run_list.pop(id_run,'Not found')
 
     def plotEach(self, cols=[], export=False):
         '''
-        cols: List of index (String/column name)  default: all
+        cols: List of index (String/column name)  default: ["speed", "ideal_speed", "power", "heart_rate"]
         export: Bool
+        plot one graph with specified or default cols for each run
         '''
         if cols == []:
             cols = ["speed", "ideal_speed", "power", "heart_rate"]
@@ -317,10 +311,10 @@ class RunAnalysis:
 
     def comparation(self, keys=None, cols=[], opts="def", export=False):
         '''
-        allows to comparate data (specified in cols) of two or more races (listed in keys)
         keys: List of String (run ID)  default: all
-        cols: List of List of Index (String/column name)  default: all
-        opts: "def", "Diego", "Matilde"
+        cols: List of List of Index (String/column name)  default: opts
+        opts: "def", "Diego", "Matilde", "Enzo"
+        allow to comparate specified in cols of two or more races (listed in keys)
         '''
         if cols==[]:
             cols = self.dict_opts[opts]
@@ -373,7 +367,9 @@ class RunAnalysis:
 
         
     def calcAvgRun(self):   #da controllare se sono di lunghezze diverse
-        '''calculate average run'''
+        '''
+        calculate average run
+        '''
         if not self.run_list:
             print("no run in run_list")
             return
@@ -401,7 +397,7 @@ class RunAnalysis:
             for col in run_cols:
                 if col not in cols:
                     avg_run.run_data[col] = run.run_data[col]
-                    count_index[col].values = 1
+                    count_index[col] = 1
                 else:
                     avg_run.run_data[col] = avg_run.run_data[col] + run.run_data[col]
                     count_index[col] = count_index[col]+1
@@ -411,8 +407,14 @@ class RunAnalysis:
         avg_run.calcAvgValues()
         self.addRun(avg_run)
 
-    def generateCol(self, col="power", avg_value=None, std_value=None, std_perc=None):   #da scrivere generica per ogni grandezza
-    # def generateCol(self, col="power", avg_value=200, std_value=20, std_perc=0.10):   #da scrivere generica per ogni grandezza
+    def generateCol(self, col="power", avg_value=None, std_value=None, std_perc=None):
+        '''
+        col: String (Index) default: power
+        avg_value: Float
+        std_value: Float
+        std_perc: Float
+        generate a random column with specified mean, standard deviation and/or percentage standard deviation
+        '''
         if "avg_run" not in self.run_list.keys():
             self.calcAvgRun()
         if not bool(avg_value):
@@ -425,6 +427,14 @@ class RunAnalysis:
         return scatter_factor*avg_value
 
     def modeling(self, degree=2, input_values=['power', 'heart_rate'], output_value="speed", plot=False):
+        '''
+        degree: Int
+        input_values: List of String (Index)
+        output_value: String (Index)
+        plot: Bool
+        create a model to predict output_value knowing the input_values.
+        model used: Polynomial Regression of degree=degree
+        '''
         all_values = []
         all_values.extend(input_values)
         all_values.append(output_value)
@@ -460,7 +470,7 @@ class RunAnalysis:
             print(f'Run {i + 1} - MSE: {mse}, R²: {r2}')
             
             if plot==True:
-                # Visualizza i risultati per ciascun dataset
+                # Visualize the results for each dataset
                 plt.scatter(X[:, 0], y, label=f'Dataset {i + 1} - Real Data', alpha=0.5)
                 plt.scatter(X[:, 0], predictions, label=f'Dataset {i + 1} - Predictions (Array)', linewidth=2)
         if plot==True:
@@ -476,6 +486,9 @@ class RunAnalysis:
     def simulate(self, input_values=None, plot=False, export=False):
         '''
         input_values: DataFrame
+        plot: Bool
+        export: Bool
+        simulate self.prediction knowing input_values, using self.model
         '''
         if self.model==None:
             print("No model")
