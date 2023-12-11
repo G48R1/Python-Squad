@@ -19,16 +19,18 @@ class Run:
     
     def __init__(self):
         '''
+        id_run: String (file name)
         atm_cond: AtmConditions Object
         bike_info: BikeInfo Object
-        run_data: List (Matrix)
-        header: List of String (header of csv file)
+        run_data: DataFrame
+        n_data: Int (number of run_data's rows)
+        disp: Float (displacement)
+        avg_values: Dict
         '''
         self.id_run = None
         self.atm_cond = None
         self.bike_info = BikeInfo()
         self.run_data = None
-        self.header = None   #header of csv file
         self.n_data = None   #length of run_data
         self.disp = None   #displacement / dissipation factor
         self.avg_values = {}
@@ -47,32 +49,42 @@ class Run:
         '''
         self.bike_info = bike_info
 
-    def readRun(self, file_name):
-        '''
-        file_name: String (Path)
-        read csv file with run data and save them
-        '''
-        self.id_run = file_name.rsplit('/',1)[-1]   #extraction of file name from path
-        data, self.header = util.readCsvFile(file_name, header=True)
-        self.run_data = pd.DataFrame(data, columns = self.header)
-        self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
-        self.run_data['cadence'] = pd.to_numeric(self.run_data['cadence'])
-        self.run_data['speed'] = pd.to_numeric(self.run_data['speed'])
-        self.run_data['power'] = pd.to_numeric(self.run_data['power'])
-        self.run_data['distance'] = pd.to_numeric(self.run_data['distance'])
-        if "heart_rate" in self.run_data.columns.values:   #we could check all the values
-            self.run_data['heart_rate'] = pd.to_numeric(self.run_data['heart_rate'])
-        if "temperature" in self.run_data.columns.values:
-            self.run_data['temperature'] = pd.to_numeric(self.run_data['temperature'])
-        if "altitude" in self.run_data.columns.values:
-            self.run_data['altitude'] = pd.to_numeric(self.run_data['altitude'])
+    # def readRunOld(self, file_name):
+    #     '''
+    #     file_name: String (Path)
+    #     read csv file with run data and save them
+    #     '''
+    #     self.id_run = file_name.rsplit('/',1)[-1]   #extraction of file name from path
+    #     data, self.header = util.readCsvFile(file_name, header=True)
+    #     self.run_data = pd.DataFrame(data, columns = self.header)
+    #     self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
+    #     self.run_data['cadence'] = pd.to_numeric(self.run_data['cadence'])
+    #     self.run_data['speed'] = pd.to_numeric(self.run_data['speed'])
+    #     self.run_data['power'] = pd.to_numeric(self.run_data['power'])
+    #     self.run_data['distance'] = pd.to_numeric(self.run_data['distance'])
+    #     if "heart_rate" in self.run_data.columns.values:   #we could check all the values
+    #         self.run_data['heart_rate'] = pd.to_numeric(self.run_data['heart_rate'])
+    #     if "temperature" in self.run_data.columns.values:
+    #         self.run_data['temperature'] = pd.to_numeric(self.run_data['temperature'])
+    #     if "altitude" in self.run_data.columns.values:
+    #         self.run_data['altitude'] = pd.to_numeric(self.run_data['altitude'])
         
-        #self.run_data["speed"] = self.data["speed"]/3.6   #conversion from km/h to m/s
+    #     #self.run_data["speed"] = self.data["speed"]/3.6   #conversion from km/h to m/s
+    #     self.n_data = len(self.run_data)
+    #     #self.run_data["torq"] =self.run_data["Power"]*60/self.data["Cadence"] # wheel or pedal rpm? (here pedal)
+    #     self.avg_power = np.mean(self.run_data["power"])
+    #     self.dev_power = np.std(self.run_data["power"])
+    #     self.calcAvgValues()
+    #     self.gearChangeDetect()   #comment this line if there isn't enough bike info
+
+    def readRun(self, file_name):
+        self.id_run = file_name.rsplit('/',1)[-1]   #extraction of file name from path
+        self.run_data = util.csv2Df(file_name)
+        self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
+        for index in self.run_data.columns.values:
+            if index != "timestamp":
+                self.run_data[index] = pd.to_numeric(self.run_data[index])
         self.n_data = len(self.run_data)
-        #self.run_data["torq"] =self.run_data["Power"]*60/self.data["Cadence"] # wheel or pedal rpm? (here pedal)
-        self.avg_power = np.mean(self.run_data["power"])
-        self.dev_power = np.std(self.run_data["power"])
-        self.calcAvgValues()
         self.gearChangeDetect()   #comment this line if there isn't enough bike info
 
     def rescale(self, col="altitude", min_bd=50):
@@ -126,9 +138,9 @@ class Run:
         rd = self.run_data
         bi = self.bike_info
         L = self.n_data
-        rd['gear'] = np.ones(L)
+        rd['gear'] = np.ones(L)*initial_gear
         rd['gear'] = pd.to_numeric(rd['gear'],downcast='integer')
-        rd.at[0,'gear'] = initial_gear
+        # rd.at[0,'gear'] = initial_gear
         rd['RPMw_bo_RPMp'] = np.ones(L)   #RPM wheel based on RPM pedal
         self.run_data['RPMw_bo_RPMp'] = pd.to_numeric(rd['RPMw_bo_RPMp'])
         max_gear = len(bi.gear_box.gear_box)
@@ -140,7 +152,7 @@ class Run:
         #calculating values of 'gear' and 'RPMw_bo_RPMp' (from 1 to n_data-3)
         for i in np.arange(self.n_data-3)+1:
             coeff1 = 0.95 #+ 0.02*(rd.at[i-1,'gear']/max_gear)**2   #variable depending on the gear (>gear  -->  >coeff)
-            coeff2 = 0.98
+            coeff2 = 1 - 0.02
             if rd.at[i,'cadence'] < rd.at[i-1,'cadence']*coeff1 and rd.at[i+2,'cadence']>=rd.at[i+1,'cadence']*coeff2:
                 rd.at[i,'gear'] = rd.at[i-1,'gear'] + 1
             else:
@@ -161,6 +173,7 @@ class Run:
         
         #calculating the dissipation factor
         self.disp = np.mean(abs(rd['speed'] - rd['ideal_speed']) / rd['speed'])
+        self.calcAvgValues()
     
     def setBounds(self, lwbd = 2, upbd = None, all = False):   #actually the option 'all' it's not necessary
         '''

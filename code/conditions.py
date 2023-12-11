@@ -1,5 +1,7 @@
 import util
 import numpy as np
+import pandas as pd
+import math
 
 list_of_object = {"Vehicle": "bike", "Driver": "driver", "Wheels": "wheels", "GearBox": "gear_box"}
 
@@ -16,7 +18,7 @@ class Vehicle:
         self.crank = crank   #pedivella
         self.string_attribute = ["name"]
 
-    def getInfoFromMatrix(self, matrix):
+    def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
         matrix: 2D Array-like (attribute, value)
         '''
@@ -83,7 +85,7 @@ class GearBox:
         self.chainring = chainring
         self.sec_ratio = sec_ratio
         
-    def getInfoFromMatrix(self, matrix):
+    def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
         matrix: 2D Array-like (attribute, value)
         '''
@@ -91,7 +93,7 @@ class GearBox:
             if value != '':
                 if attribute not in self.string_attribute:
                     if attribute in self.list_attribute:
-                        value = [int(num) for num in value.split(',')]
+                        value = [int(num) for num in value.split(delimiter)]
                     else:
                         value = int(value)
             try:
@@ -137,7 +139,7 @@ class Wheels:
     def setTyre(self,name):
         self.name = name
 
-    def getInfoFromMatrix(self, matrix):
+    def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
         matrix: 2D Array-like (attribute, value)
         '''
@@ -177,7 +179,7 @@ class Driver:
         '''name: String'''
         self.name = name
 
-    def getInfoFromMatrix(self, matrix):
+    def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
         matrix: 2D Array-like (attribute, value)
         '''
@@ -252,7 +254,21 @@ class BikeInfo:
         self.wheels = wheels_obj
         self.gear_box = gear_box_obj
 
-    def getInfoFromExcel(self, csv_file):
+    def getInfoFromExcel(self, file_name):
+        column_names = ["attribute", "value"]
+        df = pd.read_excel(file_name, header=None, names=column_names)
+        # Delete void rows (NaN)
+        df = df.dropna(axis=0, how='all')
+        for attribute, value in df.values:
+            if attribute in list_of_object.keys():
+                obj_name = list_of_object[attribute]
+                obj = getattr(self,obj_name)
+            else:
+                # if pd.isna(value):   #comment these 2 lines if
+                #     value=""   #you want nan instead of "" (change "getInfoFromCsv" too)
+                obj.getInfoFromMatrix([[attribute,value]],delimiter=';')
+
+    def getInfoFromCsv(self, csv_file):
         '''
         csv_file: String (path)
         '''
@@ -267,6 +283,8 @@ class BikeInfo:
                 obj_name = list_of_object[attribute]
                 obj = getattr(self,obj_name)
             else:
+                if value=="":   #comment these 2 lines if
+                    value = math.nan   #you wnat "" instead of nan (change "getInfoFromExcel" too)
                 obj.getInfoFromMatrix([[attribute,value]])
         
 

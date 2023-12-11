@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 #from datetime import datetime as dt
 #from datetime import timedelta
 import matplotlib.pyplot as plt
@@ -65,6 +66,14 @@ def readCsvFile(file_name, header=False, delimiter=','):
             else:
                 data.append([element for element in row])
     return np.array(data), head
+
+def csv2Df(file_name):
+    '''
+    file_name: String (Path)
+    read a csv file
+    return: DataFrame
+    '''
+    return pd.read_csv(file_name)    
 
 def writeCsvFile(file_name, data, header):   #TODO TO BE MODIFIED
     with open(file_name,'w') as file:

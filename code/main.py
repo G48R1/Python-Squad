@@ -18,22 +18,28 @@ an_run = RunAnalysis()
 
 run1 = Run()
 file_name = dataset_path + "Matilde_13_09_2023_AM.csv"
-run1.bike_info.getInfoFromExcel(conditions_path + "Phoenix_Matilde.csv")
+run1.bike_info.getInfoFromCsv(conditions_path + "Phoenix_Matilde.csv")
 run1.readRun(file_name)
 
 run2 = Run()
 file_name = dataset_path + "Diego_15_09_2023_AM_2.csv"
-run2.bike_info.getInfoFromExcel(conditions_path + "Cerberus_Diego.csv")
+run2.bike_info.getInfoFromExcel(conditions_path + "Cerberus_Diego.xlsx")
 run2.readRun(file_name)
+run2.gearChangeDetect(initial_gear=1)
+# print(run2.bike_info.bike.chassis_weight)
+# print(math.isnan(run2.bike_info.bike.chassis_weight))
 an_run.addRun(run2)
 
 run3 = Run()
 file_name = dataset_path + "Diego_13_09_2023_AM_2.csv"
-run3.bike_info.getInfoFromExcel(conditions_path + "Cerberus_Diego.csv")
+run3.bike_info.getInfoFromCsv(conditions_path + "Cerberus_Diego.csv")
 run3.readRun(file_name)
+run2.gearChangeDetect(initial_gear=1)
+# print(run3.bike_info.bike.chassis_weight)
+# print(math.isnan(run3.bike_info.bike.chassis_weight))
 an_run.addRun(run3)
 
-# an_run.comparation(opts="Diego", export=True)   #comparation between specified or default run with complete arbitrariness on the management of graphs
+an_run.comparation(opts="Diego", export=True)   #comparation between specified or default run with complete arbitrariness on the management of graphs
 
 #___________________
 ## manual initialization
