@@ -30,25 +30,6 @@ def moving_average(vector, filt, amplitude=3, opts='same'):
     #rd_len = int(np.size(V,axis=0))   # reduced length
     return V   #, rd_len
 
-# def readFile(file_name):
-#     '''read csv file function
-#     file_name: String (Path of the file)
-#     return: ndArray, header
-#     '''
-#     data = []
-#     header = []
-#     with open(file_name,'r') as file:
-#         reader = csv.reader(file)
-#         #next(reader, None)
-#         head = True
-#         for row in reader:
-#             if head == True:
-#                 header=[str(element) for element in row]
-#                 head = False
-#             else:
-#                 data.append([element for element in row])
-#     return np.array(data), header
-
 def readCsvFile(file_name, header=False, delimiter=','):
     '''read csv file function
     file_name: String (Path of the file)
@@ -81,3 +62,22 @@ def writeCsvFile(file_name, data, header):   #TODO TO BE MODIFIED
         writer.writerow(header)
         for row in data:   #TO BE MODIFIED
             writer.writerow(row)
+
+# def readFile(file_name):
+#     '''read csv file function
+#     file_name: String (Path of the file)
+#     return: ndArray, header
+#     '''
+#     data = []
+#     header = []
+#     with open(file_name,'r') as file:
+#         reader = csv.reader(file)
+#         #next(reader, None)
+#         head = True
+#         for row in reader:
+#             if head == True:
+#                 header=[str(element) for element in row]
+#                 head = False
+#             else:
+#                 data.append([element for element in row])
+#     return np.array(data), header

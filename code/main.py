@@ -49,7 +49,7 @@ run3.readRun(file_name)
 run2.gearChangeDetect(initial_gear=1)
 an_run.addRun(run3)
 
-an_run.comparation(opts="Diego", export=True)   #comparation between specified or default run with complete arbitrariness on the management of graphs
+an_run.comparation(opts="Diego", export_PDF=True, show=True)   #comparation between specified or default run with complete arbitrariness on the management of graphs
 
 #___________________
 ## Run object : manual initialization
@@ -80,7 +80,7 @@ an_run.comparation(opts="Diego", export=True)   #comparation between specified o
 #
 # an_run.plotEach(export=True)   #plot and export each run, representing specified or default cols
 # an_run.comparation(keys=["Diego_15_09_2023_AM_2.csv","Diego_13_09_2023_AM_2.csv"],
-#                    cols=[["speed","heart_rate"],["power", "heart_rate"],["ideal_speed","power","altitude"]],export=True)   #complete arbitrariness on the management of graphs
+#                    cols=[["speed","heart_rate"],["power", "heart_rate"],["ideal_speed","power","altitude"]],export_PDF=True)   #complete arbitrariness on the management of graphs
 # an_run.calcAvgRun()
 # an_run.run_list["avg_run"].plot()   #plot the average run
 

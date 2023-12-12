@@ -49,39 +49,11 @@ class Run:
         '''
         self.bike_info = bike_info
 
-    # def readRunOld(self, file_name):
-    #     '''
-    #     file_name: String (Path)
-    #     read csv file with run data and save them
-    #     '''
-    #     self.id_run = file_name.rsplit('/',1)[-1]   #extraction of file name from path
-    #     data, self.header = util.readCsvFile(file_name, header=True)
-    #     self.run_data = pd.DataFrame(data, columns = self.header)
-    #     self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
-    #     self.run_data['cadence'] = pd.to_numeric(self.run_data['cadence'])
-    #     self.run_data['speed'] = pd.to_numeric(self.run_data['speed'])
-    #     self.run_data['power'] = pd.to_numeric(self.run_data['power'])
-    #     self.run_data['distance'] = pd.to_numeric(self.run_data['distance'])
-    #     if "heart_rate" in self.run_data.columns.values:   #we could check all the values
-    #         self.run_data['heart_rate'] = pd.to_numeric(self.run_data['heart_rate'])
-    #     if "temperature" in self.run_data.columns.values:
-    #         self.run_data['temperature'] = pd.to_numeric(self.run_data['temperature'])
-    #     if "altitude" in self.run_data.columns.values:
-    #         self.run_data['altitude'] = pd.to_numeric(self.run_data['altitude'])
-        
-    #     #self.run_data["speed"] = self.data["speed"]/3.6   #conversion from km/h to m/s
-    #     self.n_data = len(self.run_data)
-    #     #self.run_data["torq"] =self.run_data["Power"]*60/self.data["Cadence"] # wheel or pedal rpm? (here pedal)
-    #     self.avg_power = np.mean(self.run_data["power"])
-    #     self.dev_power = np.std(self.run_data["power"])
-    #     self.calcAvgValues()
-    #     self.gearChangeDetect()   #comment this line if there isn't enough bike info
-
     def readRun(self, file_name):
         self.id_run = file_name.rsplit('/',1)[-1]   #extraction of file name from path
         self.run_data = util.csv2Df(file_name)
         self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
-        for index in self.run_data.columns.values:
+        for index in self.indexes():
             if index != "timestamp":
                 self.run_data[index] = pd.to_numeric(self.run_data[index])
         self.n_data = len(self.run_data)
@@ -108,11 +80,14 @@ class Run:
             print("length not equal: ",len(col)," not equal to ",self.n_data)
         self.calcAvgValues()
     
+    def indexes(self):
+        return self.run_data.columns.values
+    
     def calcAvgValues(self):
         '''
         calculate average values of each column except for "timestamp" and "distance"
         '''
-        cols = self.run_data.columns.values
+        cols = self.indexes()
         cols = np.delete(cols, np.where(cols == "timestamp"))
         cols = np.delete(cols, np.where(cols == "distance"))
         for index in cols:
@@ -194,7 +169,7 @@ class Run:
         upbd = self.n_data - upbd        
         #changing data directly
         data = self.run_data.iloc[lwbd:upbd].values   #selecting the new bounded dataset
-        names = self.run_data.columns.values   #getting the names of the columns
+        names = self.indexes()   #getting the names of the columns
         self.run_data = pd.DataFrame(data,columns=names)
         self.n_data = len(self.run_data)
         #return self.run_data.iloc[lwbd:upbd]
@@ -212,7 +187,7 @@ class Run:
             rows = np.arange(self.n_data)
         util.writeCsvFile(file_name, self.run_data.iloc[rows][cols].values, cols)
     
-    def plot(self, cols=[], alt_min_bd=50):
+    def plot(self, cols=[], alt_min_bd=50):   #TODO aggiungere export
         '''
         cols: List of index (String/column name)  default: ["speed", "ideal_speed", "power", "heart_rate"]
         alt_min_bd: int [min bound of rescaled altitude]
@@ -221,7 +196,7 @@ class Run:
         if cols == []:
             cols = ["speed", "ideal_speed", "power", "heart_rate"]
         for col in cols:
-            if col in self.run_data.columns.values:
+            if col in self.indexes():
                 if col=='altitude':
                     plt.plot(self.run_data["distance"],self.rescale(col,alt_min_bd),label=col)
                 else:
@@ -230,14 +205,14 @@ class Run:
         plt.legend()
         plt.show()
     
-    def export(self):
+    def export(self):   #TODO aggiungere una export più flessibile al plot
         '''
         export PDF with graphs of principal cols
         '''
         # Create an PdfPages object to save multiple plots in a single PDF
         with PdfPages(self.id_run+'.pdf') as pdf:
             plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
-            if "ideal_speed" in self.run_data.columns.values:
+            if "ideal_speed" in self.indexes():
                 plt.plot(self.run_data["distance"],self.run_data["ideal_speed"],label="ideal speed")
             plt.plot(self.run_data["distance"],self.run_data["power"],label="power")
             max_power = max(self.run_data["power"])*np.ones(self.n_data)
@@ -246,7 +221,7 @@ class Run:
             plt.legend()
             pdf.savefig(bbox_inches='tight', pad_inches=0.5)
             plt.close()
-            if "heart_rate" in self.run_data.columns.values:
+            if "heart_rate" in self.indexes():
                 plt.plot(self.run_data["distance"],self.run_data["heart_rate"],label="heart rate")
             plt.title("Data: run "+self.id_run)
             plt.legend()
@@ -280,7 +255,7 @@ class RunAnalysis:
         self.model_data = None
         self.prediction = None
         self.dict_opts = {
-            "def": [["speed","power"],["altitude","heart_rate"]],
+            "def": [["speed","power","ideal_speed"],["altitude","heart_rate"]],
             "Diego": [["speed","power"],["altitude","heart_rate"],["speed","ideal_speed"]],
             "Matilde": [["speed","power"],["heart_rate"]],
             "Enzo": [["speed","power"],["speed","ideal_speed"]]
@@ -314,7 +289,7 @@ class RunAnalysis:
         for run in self.run_list.values():
             run.plot(cols=cols)
             # for col in cols:
-            #     if col in run.run_data.columns.values:
+            #     if col in run.indexes():
             #         plt.plot(run.run_data["distance"],run.run_data[col],label=col)
             # plt.title("Data: run "+str(i+1))
             # plt.legend()
@@ -322,7 +297,7 @@ class RunAnalysis:
             if export == True:
                 run.export()
 
-    def comparation(self, keys=None, cols=[], opts="def", export=False):
+    def comparation(self, keys=None, cols=[], opts="def", export_PDF=False, export_PNG=False, show=True):
         '''
         keys: List of String (run ID)  default: all
         cols: List of List of Index (String/column name)  default: opts
@@ -333,7 +308,7 @@ class RunAnalysis:
             cols = self.dict_opts[opts]
         if not bool(keys):
             keys = self.run_list.keys()
-        if export==True:
+        if export_PDF==True:
             pdf = PdfPages("comparation"+".pdf")
         for plot in cols:
             flag = False
@@ -341,7 +316,7 @@ class RunAnalysis:
                 run = self.run_list.get(key)
                 id = " run "+ str(i+1)
                 for col in plot:
-                    if col in run.run_data.columns.values:
+                    if col in run.indexes():
                         flag = True
                         if col=="altitude":
                             plt.plot(run.run_data["distance"],run.rescale(col),label=col+id)
@@ -350,18 +325,24 @@ class RunAnalysis:
             if flag==True:
                 plt.title("Comparation")
                 plt.legend()
-                if export==True:
+                if export_PDF==True:
                     pdf.savefig(bbox_inches='tight', pad_inches=0.5)
-                plt.show()
+                if export_PNG==True:
+                    fname = plot[0]
+                    for col in plot[1:]:
+                        fname = fname + "_" + col
+                    plt.savefig(fname=fname+".png")
+                if show==True:
+                    plt.show()
                 plt.close()
-        if export==True:
+        if export_PDF==True:
             pdf.close()
 
     # def export(self):
     #     # Create an PdfPages object to save multiple plots in a single PDF
     #     with PdfPages(self.id_run+'.pdf') as pdf:
     #         plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
-    #         if "ideal_speed" in self.run_data.columns.values:
+    #         if "ideal_speed" in self.indexes():
     #             plt.plot(self.run_data["distance"],self.run_data["ideal_speed"],label="ideal speed")
     #         plt.plot(self.run_data["distance"],self.run_data["power"],label="power")
     #         max_power = max(self.run_data["power"])*np.ones(self.n_data)
@@ -370,7 +351,7 @@ class RunAnalysis:
     #         plt.legend()
     #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
     #         plt.close()
-    #         if "heart_rate" in self.run_data.columns.values:
+    #         if "heart_rate" in self.indexes():
     #             plt.plot(self.run_data["distance"],self.run_data["heart_rate"],label="heart rate")
     #         plt.title("Data: run "+self.id_run)
     #         plt.legend()
@@ -397,13 +378,13 @@ class RunAnalysis:
         avg_run.id_run = "avg_run"
         avg_run.run_data = rlv[0].run_data
         avg_run.n_data = n_data
-        cols = avg_run.run_data.columns.values
+        cols = avg_run.indexes()
         cols = np.delete(cols, np.where(cols == "timestamp"))
         cols = np.delete(cols, np.where(cols == "distance"))
         for col in cols:
             count_index[col] = 1
         for run in rlv[1:]:
-            run_cols = run.run_data.columns.values
+            run_cols = run.indexes()
             run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
             run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
 
@@ -455,7 +436,7 @@ class RunAnalysis:
         self.prediction = output_value
         for run in self.run_list.values():
             for value in all_values:
-                if value not in run.run_data.columns.values:
+                if value not in run.indexes():
                     print("no data for \""+value+"\"")
                     return
         
