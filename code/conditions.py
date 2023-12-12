@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import math
 
-list_of_object = {"Vehicle": "bike", "Driver": "driver", "Wheels": "wheels", "GearBox": "gear_box"}
+list_of_object = {"Vehicle": "bike", "Driver": "driver", "Wheels": "wheels", "GearBox": "gear_box"}   #conversion from Excel name (in conditions file) to Class name
 
 class Vehicle:
     '''Contains information of a vehicle (bike)'''
@@ -17,6 +17,26 @@ class Vehicle:
         self.leg_traction = leg_traction
         self.crank = crank   #pedivella
         self.string_attribute = ["name"]
+
+    def setInfo(self,name,chassis_weight,hull_weight,frontal_area,inertia,leg_traction,crank):
+        '''
+        chassis_weight: Float
+        hull_weight: Float
+        frontal_area: Float
+        inertia: Float
+        leg_traction: Bool
+        crank: Float (length)'''
+        self.name = name
+        self.chassis_weight = chassis_weight   #peso telaio
+        self.hull_weight = hull_weight   #peso carena
+        self.frontal_area = frontal_area
+        self.inertia = inertia
+        self.leg_traction = leg_traction
+        self.crank = crank
+
+    def setName(self,name):
+        '''name: String'''
+        self.name = name
 
     def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
@@ -41,27 +61,6 @@ class Vehicle:
                     setattr(self, key, dictionary.get(key))
                 except AttributeError:
                     print(f"Object has no attribute {key}")
-
-    
-    def setInfo(self,name,chassis_weight,hull_weight,frontal_area,inertia,leg_traction,crank):
-        '''
-        chassis_weight: Float
-        hull_weight: Float
-        frontal_area: Float
-        inertia: Float
-        leg_traction: Bool
-        crank: Float (length)'''
-        self.name = name
-        self.chassis_weight = chassis_weight   #peso telaio
-        self.hull_weight = hull_weight   #peso carena
-        self.frontal_area = frontal_area
-        self.inertia = inertia
-        self.leg_traction = leg_traction
-        self.crank = crank
-
-    def setName(self,name):
-        '''name: String'''
-        self.name = name
 
 class GearBox:
     def __init__(self, gear_box=None, chainring=None, sec_ratio=None):
@@ -168,7 +167,7 @@ class Driver:
     def __init__(self,name=None,weight=None):
         self.name = name
         self.weight = weight
-        self.string_attribute = ["name"]
+        self.string_attribute = ["name"]   #List of attributes that are String, not numbers
 
     def setInfo(self,name,weight):
         '''weight: Float'''

@@ -1,7 +1,21 @@
 '''
 Date: 15/11/2023
+cosa fa questo codice?
+prende i dati delle run (che sono salvati in dei file csv) e li rielabora per produrre dei valori
+e dei grafici significativi e utili per l'analisi della run.
+È un codice abbastanza versatile, e permette di avere molta flessibilità sugli output che si vogliono
+visualizzare.
+Per un oggetto RunAnalysis si possono selezionare manualmente i dati che si intende visulizzare,
+già divisi per plot (ad esempio, si possono rappresentare i profili di "power" e "speed" in una finestra,
+mentre la "speed" e la "ideal_speed" in un'altra).
+Si possono anche selezionare delle opzioni (opts) preimpostate, che corrispondono a dei blocchi di grafici
+predefiniti, associati alle preferenze usuali dei ciclisti e/o di chi analizzerà i dati.
+C'è anche un modulo di simulazione, ma è ancora da sistemare.
+Però nel frattempo tu...
+crea una copia di questo codice nel tuo PC e divertiti a cambiare i parametri a tuo piacimento!
 
-
+N.B. i path utilizzati in questo codice sono path relativi. Ricordati di non spostare i file, altrimenti
+nulla funzionerà più :)
 '''
 from run import *
 import os
@@ -26,8 +40,6 @@ file_name = dataset_path + "Diego_15_09_2023_AM_2.csv"
 run2.bike_info.getInfoFromExcel(conditions_path + "Cerberus_Diego.xlsx")
 run2.readRun(file_name)
 run2.gearChangeDetect(initial_gear=1)
-# print(run2.bike_info.bike.chassis_weight)
-# print(math.isnan(run2.bike_info.bike.chassis_weight))
 an_run.addRun(run2)
 
 run3 = Run()
@@ -35,14 +47,12 @@ file_name = dataset_path + "Diego_13_09_2023_AM_2.csv"
 run3.bike_info.getInfoFromCsv(conditions_path + "Cerberus_Diego.csv")
 run3.readRun(file_name)
 run2.gearChangeDetect(initial_gear=1)
-# print(run3.bike_info.bike.chassis_weight)
-# print(math.isnan(run3.bike_info.bike.chassis_weight))
 an_run.addRun(run3)
 
 an_run.comparation(opts="Diego", export=True)   #comparation between specified or default run with complete arbitrariness on the management of graphs
 
 #___________________
-## manual initialization
+## Run object : manual initialization
 #
 # for Matilde
 # gb1 = GearBox(gear_box=[40,35,31,27,24,21,19,17,15,14,13,12], chainring=108, sec_ratio=[38,18])
@@ -66,7 +76,7 @@ an_run.comparation(opts="Diego", export=True)   #comparation between specified o
 # print(run2.disp)   #displacement
 
 #___________________
-## other stuff we can do with a Run object
+## RunAnalysis object
 #
 # an_run.plotEach(export=True)   #plot and export each run, representing specified or default cols
 # an_run.comparation(keys=["Diego_15_09_2023_AM_2.csv","Diego_13_09_2023_AM_2.csv"],
@@ -88,6 +98,18 @@ an_run.comparation(opts="Diego", export=True)   #comparation between specified o
 
 
 
+
+
+
+'''
+# do not consider
+
 # print(run1.run_data.iloc[0:7][['speed','gear','RPMw_bo_RPMp','ideal_speed']])
 # print(run1.run_data[['speed','gear','cadence','RPMw_bo_RPMp','ideal_speed']])
 
+# print(run2.bike_info.bike.chassis_weight)
+# print(math.isnan(run2.bike_info.bike.chassis_weight))
+
+# print(run3.bike_info.bike.chassis_weight)
+# print(math.isnan(run3.bike_info.bike.chassis_weight))
+'''

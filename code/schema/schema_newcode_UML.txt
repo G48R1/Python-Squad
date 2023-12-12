@@ -1,94 +1,129 @@
 @startuml
 package Boundary_Conditions <<Rectangle>>{
 
-struct AtmCond{
-+wind : Array
-+angle : Array
+struct AtmConditions{
 +temp : Array
 +pres : Array
 +umid : Array
++wind : Array
++angle : Array
 ..
-+SetAllCostant()
++setInfo()
++getInfoFromCsv()
+#getInfoFromDict()
 }
 
 struct BikeInfo{
-+vehicle : Vehicle
++bike : Vehicle
 +driver : Driver
-+wheels : Wheel
++wheels : Wheels
++gear_box : GearBox
+..
++setInfo()
++getInfoFromExcel()
++getInfoFromCsv()
 }
 
 struct Driver{
 +name
 +weight
+-string_attributes
 ..
-#InputInfoFromExcel()
-+InputInfoDirectly()
++setInfo()
+#getInfoFromMatrix()
+#getInfoFromDict()
 }
 
 struct Vehicle{
 +name
-+struct_weight
++chassis_weight
 +hull_weight
 +frontal_area
-+hand_traction : bool
 +inertia
++leg_traction : bool
++crank
+-string_attributes
 ..
-#InputInfoFromExcel()
-+InputInfoDirectly()
++setInfo()
+#getInfoFromMatrix()
+#getInfoFromDict()
 }
 
-struct Wheel{
-+tyre
-+pres
-+radius
-+rolling_circ
-+inertia
+struct GearBox{
++gear_box : List
++chainring
++sec_ratio
+-string_attributes
+-list_attributes
 ..
-#InputInfoFromExcel()
-+InputInfoDirectly()
++setInfo()
+#getInfoFromMatrix()
+#getInfoFromDict()
+}
+
+struct Wheels{
++tyre
++pressure
++radius
++rolling_circum
++inertia
+-string_attributes
+..
++setInfo()
+#getInfoFromMatrix()
+#getInfoFromDict()
 }
 }
 
 package Analysis_n_Simulation <<Rectangle>>{
 class Run{
-+atmospheric_conditions : AtmCond
++id_run
++atm_cond : AtmCond
 +bike_info : BikeInfo
-+run_data
++run_data : Dataframe
++n_data
++disp
++avg_values : Dict
 __
-+InputAtmCond()
-+InputBikeInfo()
-+InputRun()
++setAtmCond()
++setBikeInfo()
++readRun()
+-rescale()
++addCol()
+#calcAvgValues()
++gearChangeDetect()
++setBounds()
++exportCols()
++plot()
++export()
 }
 
 class RunAnalysis extends Run{
-+run : List<Run>
++run_list : Dict
+-poly
+-model
+-model_data
+-prediction
+-dict_opts
 __
-+AddRun()
-+RmRun()
-#CheckMissingColumn()
-+PlotEach()
-+Comparation()
-+PlotAvg()
-}
-
-class Simulation extends Run{
-+run : List<Run>
-__
-#Modeling()
-#Simulate()
-+Plot()
++addRun()
++rmRun()
++plotEach()
++comparation()
++calcAvgRun()
++generateCol()
++modeling()
++simulate()
 }
 }
 
 package Util <<Rectangle>>{
 class Util{
-#some_costants
 __
-+MovingAvg()
-+ReadCSV()
-+AvgColumn()
-+StimaCoeff()
-+GearChangeDetect()
+#movingAvg()
+#readCsvFile()
+#csv2Df()
+#writeCsvFile()
 }
 }
 @enduml
