@@ -18,7 +18,7 @@ class Vehicle:
         self.crank = crank   #pedivella
         self.string_attribute = ["name"]
 
-    def setInfo(self,name,chassis_weight,hull_weight,frontal_area,inertia,leg_traction,crank):
+    def setInfo(self,name=None,chassis_weight=None,hull_weight=None,frontal_area=None,inertia=None,leg_traction=None,crank=None):
         '''
         chassis_weight: Float
         hull_weight: Float
@@ -26,17 +26,20 @@ class Vehicle:
         inertia: Float
         leg_traction: Bool
         crank: Float (length)'''
-        self.name = name
-        self.chassis_weight = chassis_weight   #peso telaio
-        self.hull_weight = hull_weight   #peso carena
-        self.frontal_area = frontal_area
-        self.inertia = inertia
-        self.leg_traction = leg_traction
-        self.crank = crank
-
-    def setName(self,name):
-        '''name: String'''
-        self.name = name
+        if name is not None:
+            self.name = name
+        if chassis_weight is not None:
+            self.chassis_weight = chassis_weight   #peso telaio
+        if hull_weight is not None:
+            self.hull_weight = hull_weight   #peso carena
+        if frontal_area is not None:
+            self.frontal_area = frontal_area
+        if inertia is not None:
+            self.inertia = inertia
+        if leg_traction is not None:
+            self.leg_traction = leg_traction
+        if crank is not None:
+            self.crank = crank
 
     def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
@@ -75,14 +78,17 @@ class GearBox:
         self.string_attribute = []
         self.list_attribute = ["gear_box", "sec_ratio"]
 
-    def setInfo(self, gear_box, chainring, sec_ratio):
+    def setInfo(self, gear_box=None, chainring=None, sec_ratio=None):
         '''
         chainring: Int (number of theet)
         sec_ratio: 2D Iterable (number of theet, es. [greatest, lowest])
         '''
-        self.gear_box = gear_box
-        self.chainring = chainring
-        self.sec_ratio = sec_ratio
+        if gear_box is not None:
+            self.gear_box = gear_box
+        if chainring is not None:
+            self.chainring = chainring
+        if sec_ratio is not None:
+            self.sec_ratio = sec_ratio
         
     def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
@@ -122,21 +128,23 @@ class Wheels:
         self.string_attribute = ["tyre"]
 
 
-    def setInfo(self,tyre,pressure,radius,rolling_circum,inertia):
+    def setInfo(self,tyre=None,pressure=None,radius=None,rolling_circum=None,inertia=None):
         '''
         pressure: Float
         radius: Float
         rolling_circum: Float
         inertia: Float
         '''
-        self.tyre = tyre
-        self.pressure = pressure
-        self.radius = radius
-        self.rolling_circum = rolling_circum
-        self.inertia = inertia
-
-    def setTyre(self,name):
-        self.name = name
+        if tyre is not None:
+            self.tyre = tyre
+        if pressure is not None:
+            self.pressure = pressure
+        if radius is not None:
+            self.radius = radius
+        if rolling_circum is not None:
+            self.rolling_circum = rolling_circum
+        if inertia is not None:
+            self.inertia = inertia
 
     def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
@@ -169,14 +177,12 @@ class Driver:
         self.weight = weight
         self.string_attribute = ["name"]   #List of attributes that are String, not numbers
 
-    def setInfo(self,name,weight):
+    def setInfo(self,name=None,weight=None):
         '''weight: Float'''
-        self.name = name
-        self.weight = weight
-
-    def setName(self,name):
-        '''name: String'''
-        self.name = name
+        if name is not None:
+            self.name = name
+        if weight is not None:
+            self.weight = weight
 
     def getInfoFromMatrix(self, matrix, delimiter=','):
         '''
@@ -211,7 +217,7 @@ class AtmConditions:
         self.wind = wind
         self.angle = angle   #clockwise?
 
-    def setInfo(self,temperature,pressure,humidity,wind,angle):
+    def setInfo(self,temperature=None,pressure=None,humidity=None,wind=None,angle=None):
         '''
         temperature: Iterable of Float
         pressure: Iterable of Float
@@ -219,11 +225,16 @@ class AtmConditions:
         wind: Iterable of Float
         angle: Iterable of Float
         '''
-        self.temperature = temperature
-        self.pressure = pressure
-        self.humidity = humidity
-        self.wind = wind
-        self.angle = angle
+        if temperature is not None:
+            self.temperature = temperature
+        if pressure is not None:
+            self.pressure = pressure
+        if humidity is not None:
+            self.humidity = humidity
+        if wind is not None:
+            self.wind = wind
+        if angle is not None:
+            self.angle = angle
 
     def getInfoFromCsv(self):
         pass
@@ -247,11 +258,15 @@ class BikeInfo:
         self.wheels = wheels_obj
         self.gear_box = gear_box_obj   #sprocket pack / pacco pignoni
 
-    def setInfo(self, vehicle_obj, driver_obj, wheels_obj, gear_box_obj):
-        self.bike = vehicle_obj
-        self.driver = driver_obj
-        self.wheels = wheels_obj
-        self.gear_box = gear_box_obj
+    def setInfo(self, vehicle_obj=None, driver_obj=None, wheels_obj=None, gear_box_obj=None):
+        if vehicle_obj is not None:
+            self.bike = vehicle_obj
+        if driver_obj is not None:
+            self.driver = driver_obj
+        if wheels_obj is not None:
+            self.wheels = wheels_obj
+        if gear_box_obj is not None:
+            self.gear_box = gear_box_obj
 
     def getInfoFromExcel(self, file_name):
         column_names = ["attribute", "value"]

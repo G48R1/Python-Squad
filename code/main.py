@@ -5,7 +5,7 @@ prende i dati delle run (che sono salvati in dei file csv) e li rielabora per pr
 e dei grafici significativi e utili per l'analisi della run.
 È un codice abbastanza versatile, e permette di avere molta flessibilità sugli output che si vogliono
 visualizzare.
-Per un oggetto RunAnalysis si possono selezionare manualmente i dati che si intende visulizzare,
+Per un oggetto RunAnalysis si possono selezionare manualmente i dati che si intende visualizzare,
 già divisi per plot (ad esempio, si possono rappresentare i profili di "power" e "speed" in una finestra,
 mentre la "speed" e la "ideal_speed" in un'altra).
 Si possono anche selezionare delle opzioni (opts) preimpostate, che corrispondono a dei blocchi di grafici
@@ -25,29 +25,38 @@ os.chdir(os.path.dirname(__file__))    #path della cartella che contiene il prog
 
 ## main di prova ##
 
-dataset_path = "../Dataset/"
-conditions_path = "../Dataset/conditions/"
+dataset_path_Matilde = util.getDatasetPath("Matilde")
+dataset_path_Diego = util.getDatasetPath("Diego")
+dataset_path_Enzo = util.getDatasetPath("Enzo")
 
 an_run = RunAnalysis()
 
+# "BM_130923_AM1.csv"
+
 run1 = Run()
-file_name = dataset_path + "Matilde_13_09_2023_AM.csv"
-run1.bike_info.getInfoFromCsv(conditions_path + "Phoenix_Matilde.csv")
+file_name = util.joinPath(dataset_path_Matilde, "Matilde_13_09_2023_AM.csv")
+run1.bike_info.getInfoFromCsv(util.getCondPath("Phoenix_Matilde.csv"))
 run1.readRun(file_name)
+run1.plot(cols=["speed","altitude"])
 
-run2 = Run()
-file_name = dataset_path + "Diego_15_09_2023_AM_2.csv"
-run2.bike_info.getInfoFromExcel(conditions_path + "Cerberus_Diego.xlsx")
-run2.readRun(file_name)
-run2.gearChangeDetect(initial_gear=1)
-an_run.addRun(run2)
+# run2 = Run()
+# file_name = util.joinPath(dataset_path_Diego, "Diego_15_09_2023_AM_2.csv")
+# run2.bike_info.getInfoFromExcel(util.getCondPath("Cerberus_Diego.xlsx"))
+# run2.readRun(file_name)
+# run2.gearChangeDetect(initial_gear=1)
+# an_run.addRun(run2)
 
-run3 = Run()
-file_name = dataset_path + "Diego_13_09_2023_AM_2.csv"
-run3.bike_info.getInfoFromCsv(conditions_path + "Cerberus_Diego.csv")
-run3.readRun(file_name)
-run2.gearChangeDetect(initial_gear=1)
-an_run.addRun(run3)
+# run3 = Run()
+# file_name = util.joinPath(dataset_path_Diego, "Diego_13_09_2023_AM_2.csv")
+# run3.bike_info.getInfoFromCsv(util.getCondPath("Cerberus_Diego.csv"))
+# run3.readRun(file_name)
+# run2.gearChangeDetect(initial_gear=1)
+# an_run.addRun(run3)
+
+conditions_path = util.getCondPath("Cerberus_Diego.xlsx")
+an_run.uploadFolder(folder_path=dataset_path_Diego, conds_file=conditions_path)
+
+# an_run.plotEach()
 
 an_run.comparation(opts="Diego", export_PDF=True, show=True)   #comparation between specified or default run with complete arbitrariness on the management of graphs
 

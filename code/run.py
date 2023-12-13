@@ -34,6 +34,15 @@ class Run:
         self.n_data = None   #length of run_data
         self.disp = None   #displacement / dissipation factor
         self.avg_values = {}
+        
+    def clean(self):
+        self.id_run = None
+        self.atm_cond = None
+        # self.bike_info = BikeInfo()
+        self.run_data = None
+        self.n_data = None
+        self.disp = None
+        self.avg_values = {}        
 
     def setAtmCond(self, atm_cond):
         '''
@@ -49,14 +58,16 @@ class Run:
         '''
         self.bike_info = bike_info
 
-    def readRun(self, file_name):
-        self.id_run = file_name.rsplit('/',1)[-1]   #extraction of file name from path
+    def readRun(self, file_name, cut=True):
+        self.id_run = file_name.rsplit('/',1)[-1].replace(".csv","")   #extraction of file name from path
         self.run_data = util.csv2Df(file_name)
         self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
         for index in self.indexes():
             if index != "timestamp":
                 self.run_data[index] = pd.to_numeric(self.run_data[index])
         self.n_data = len(self.run_data)
+        if cut==True:
+            self.setBounds(lwbd=2,upbd=2)
         self.gearChangeDetect()   #comment this line if there isn't enough bike info
 
     def rescale(self, col="altitude", min_bd=50):
@@ -71,11 +82,12 @@ class Run:
     def addCol(self, col_name, col):
         '''
         col_name: String
-        col: List of data
+        col: List/DataFrame/Series of data
         add a column inside the dataset
         '''
         if len(col) == self.n_data:
             self.run_data[col_name] = col
+            self.run_data[col_name] = pd.to_numeric(self.run_data[col_name])
         else:
             print("length not equal: ",len(col)," not equal to ",self.n_data)
         self.calcAvgValues()
@@ -187,7 +199,7 @@ class Run:
             rows = np.arange(self.n_data)
         util.writeCsvFile(file_name, self.run_data.iloc[rows][cols].values, cols)
     
-    def plot(self, cols=[], alt_min_bd=50):   #TODO aggiungere export
+    def plot(self, cols=[], alt_min_bd=50, export=False, show=True):
         '''
         cols: List of index (String/column name)  default: ["speed", "ideal_speed", "power", "heart_rate"]
         alt_min_bd: int [min bound of rescaled altitude]
@@ -199,13 +211,26 @@ class Run:
             if col in self.indexes():
                 if col=='altitude':
                     plt.plot(self.run_data["distance"],self.rescale(col,alt_min_bd),label=col)
+                    h_i = self.run_data.at[0,"altitude"]
+                    h_f = self.run_data.at[self.n_data-1,"altitude"]
+                    # h_min = min(self.run_data["altitude"])
+                    # h_max = max(self.run_data["altitude"])
+                    marginex1 = - 200/8000 * (self.run_data.at[self.n_data-1,"distance"]-self.run_data.at[0,"distance"])
+                    marginey1 = -4
+                    marginex2 = + 200/8000 * (self.run_data.at[self.n_data-1,"distance"]-self.run_data.at[0,"distance"])
+                    marginey2 = -3.5
+                    plt.text(self.run_data.at[0,"distance"] + marginex1, self.rescale(col,alt_min_bd)[0] + marginey1, "h_i : " + str("%.2f" % h_i) + "m")
+                    plt.text(self.run_data.at[self.n_data-1,"distance"] + marginex2, self.rescale(col,alt_min_bd)[self.n_data-1] + marginey2, "h_f : " + str("%.2f" % h_f) + "m", horizontalalignment="right")
                 else:
                     plt.plot(self.run_data["distance"],self.run_data[col],label=col)
         plt.title("Data: run "+self.id_run)
         plt.legend()
-        plt.show()
+        if export==True:
+            plt.savefig(self.id_run+".pdf")
+        if show==True:
+            plt.show()
     
-    def export(self):   #TODO aggiungere una export più flessibile al plot
+    def export(self):   #useless
         '''
         export PDF with graphs of principal cols
         '''
@@ -278,6 +303,25 @@ class RunAnalysis:
         '''
         self.run_list.pop(id_run,'Not found')
 
+    def uploadFolder(self, folder_path, conds_file):
+        '''
+        folder_path : String (Path)
+        conds_file : String (Excel file)
+        upload all races that are in a folder
+        '''
+        # run = Run()
+        # run.bike_info.getInfoFromExcel(conds_file)
+                
+        for file in os.listdir(folder_path):
+            if ".csv" in file:
+                run = Run()
+                run.bike_info.getInfoFromExcel(conds_file)
+                # run.clean()
+                run_path = os.path.join(folder_path, file)
+                run_path = run_path.replace("\\","/")
+                run.readRun(run_path)
+                self.addRun(run)
+
     def plotEach(self, cols=[], export=False):
         '''
         cols: List of index (String/column name)  default: ["speed", "ideal_speed", "power", "heart_rate"]
@@ -287,15 +331,13 @@ class RunAnalysis:
         if cols == []:
             cols = ["speed", "ideal_speed", "power", "heart_rate"]
         for run in self.run_list.values():
-            run.plot(cols=cols)
+            run.plot(cols=cols, export=export)
             # for col in cols:
             #     if col in run.indexes():
             #         plt.plot(run.run_data["distance"],run.run_data[col],label=col)
             # plt.title("Data: run "+str(i+1))
             # plt.legend()
             # plt.show()
-            if export == True:
-                run.export()
 
     def comparation(self, keys=None, cols=[], opts="def", export_PDF=False, export_PNG=False, show=True):
         '''
@@ -320,6 +362,16 @@ class RunAnalysis:
                         flag = True
                         if col=="altitude":
                             plt.plot(run.run_data["distance"],run.rescale(col),label=col+id)
+                            # h_i = run.run_data.at[0,"altitude"]
+                            # h_f = run.run_data.at[run.n_data-1,"altitude"]
+                            # # h_min = min(run.run_data["altitude"])
+                            # # h_max = max(run.run_data["altitude"])
+                            # marginex1 = - 200/8000 * (run.run_data.at[run.n_data-1,"distance"]-run.run_data.at[0,"distance"])
+                            # marginey1 = -4
+                            # marginex2 = + 200/8000 * (run.run_data.at[run.n_data-1,"distance"]-run.run_data.at[0,"distance"])
+                            # marginey2 = -3.5
+                            # plt.text(run.run_data.at[0,"distance"] + marginex1, run.rescale(col)[0] + marginey1, "h_i : " + str("%.2f" % h_i) + "m")
+                            # plt.text(run.run_data.at[run.n_data-1,"distance"] + marginex2, run.rescale(col)[run.n_data-1] + marginey2, "h_f : " + str("%.2f" % h_f) + "m", horizontalalignment="right")
                         else:
                             plt.plot(run.run_data["distance"],run.run_data[col],label=col+id)
             if flag==True:
@@ -532,3 +584,4 @@ class RunAnalysis:
         if export==True:
             pass
 
+    

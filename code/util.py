@@ -4,7 +4,10 @@ import pandas as pd
 #from datetime import timedelta
 # import matplotlib.pyplot as plt
 import csv
+import os
 
+dtset_path = "../Dataset"
+dtcond_path = "../Dataset/conditions/"
 
 
 def moving_average(vector, filt, amplitude=3, opts='same'):
@@ -62,6 +65,19 @@ def writeCsvFile(file_name, data, header):   #TODO TO BE MODIFIED
         writer.writerow(header)
         for row in data:   #TO BE MODIFIED
             writer.writerow(row)
+
+def getDatasetPath(driver_name, path_in=None, dataset_path=None):
+    if path_in is None:
+        path_in = os.getcwd()
+    if dataset_path is None:
+        dataset_path = os.path.abspath(os.path.join(path_in, dtset_path))
+    return os.path.join(dataset_path, driver_name).replace("\\","/")
+
+def getCondPath(file_name):
+    return os.path.abspath(os.path.join(os.getcwd(), dtcond_path+file_name)).replace("\\","/")
+
+def joinPath(folder_path, file_name):
+    return os.path.join(folder_path, file_name).replace("\\","/")
 
 # def readFile(file_name):
 #     '''read csv file function
