@@ -21,7 +21,7 @@ def moving_average(vector, filt, amplitude=3, opts='same'):
     restituisce la media mobile su finestre larghe 'amplitude' (si può ottenere una media mobile pesata con valori arbitrari dei pesi)
     '''
 
-    if filt==None:
+    if filt is None:
         filt = 1/amplitude*np.ones(amplitude)   #creation of a uniform filter
     else:
         filt_sum = sum(filt)

@@ -16,7 +16,7 @@ class Vehicle:
         self.inertia = inertia
         self.leg_traction = leg_traction
         self.crank = crank   #pedivella
-        self.string_attribute = ["name"]
+        self._string_attributes = ["name"]
 
     def setInfo(self,name=None,chassis_weight=None,hull_weight=None,frontal_area=None,inertia=None,leg_traction=None,crank=None):
         '''
@@ -47,7 +47,7 @@ class Vehicle:
         '''
         for attribute, value in matrix:
             if value != '':
-                if attribute not in self.string_attribute:
+                if attribute not in self._string_attributes:
                     value = float(value)
             try:
                 setattr(self, attribute, value)
@@ -75,7 +75,7 @@ class GearBox:
         self.gear_box = gear_box
         self.chainring = chainring   #moltiplica
         self.sec_ratio = sec_ratio   #secondary ratio / rimando finale
-        self.string_attribute = []
+        self._string_attributes = []
         self.list_attribute = ["gear_box", "sec_ratio"]
 
     def setInfo(self, gear_box=None, chainring=None, sec_ratio=None):
@@ -96,7 +96,7 @@ class GearBox:
         '''
         for attribute, value in matrix:
             if value != '':
-                if attribute not in self.string_attribute:
+                if attribute not in self._string_attributes:
                     if attribute in self.list_attribute:
                         value = [int(num) for num in value.split(delimiter)]
                     else:
@@ -125,7 +125,7 @@ class Wheels:
         self.radius = radius
         self.rolling_circum = rolling_circum   #circonferenza di rotolamento
         self.inertia = inertia
-        self.string_attribute = ["tyre"]
+        self._string_attributes = ["tyre"]
 
 
     def setInfo(self,tyre=None,pressure=None,radius=None,rolling_circum=None,inertia=None):
@@ -152,7 +152,7 @@ class Wheels:
         '''
         for attribute, value in matrix:
             if value != '':
-                if attribute not in self.string_attribute:
+                if attribute not in self._string_attributes:
                     value = float(value)
             try:
                 setattr(self, attribute, value)
@@ -175,7 +175,7 @@ class Driver:
     def __init__(self,name=None,weight=None):
         self.name = name
         self.weight = weight
-        self.string_attribute = ["name"]   #List of attributes that are String, not numbers
+        self._string_attributes = ["name"]   #List of attributes that are String, not numbers
 
     def setInfo(self,name=None,weight=None):
         '''weight: Float'''
@@ -190,7 +190,7 @@ class Driver:
         '''
         for attribute, value in matrix:
             if value != '':
-                if attribute not in self.string_attribute:
+                if attribute not in self._string_attributes:
                     value = float(value)
             try:
                 setattr(self, attribute, value)

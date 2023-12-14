@@ -1,6 +1,7 @@
 from conditions import *
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 # from nfoursid.kalman import Kalman
@@ -61,14 +62,17 @@ class Run:
     def readRun(self, file_name, cut=True):
         self.id_run = file_name.rsplit('/',1)[-1].replace(".csv","")   #extraction of file name from path
         self.run_data = util.csv2Df(file_name)
-        self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
-        for index in self.indexes():
-            if index != "timestamp":
-                self.run_data[index] = pd.to_numeric(self.run_data[index])
+        self.setColsType()
         self.n_data = len(self.run_data)
         if cut==True:
             self.setBounds(lwbd=2,upbd=2)
         self.gearChangeDetect()   #comment this line if there isn't enough bike info
+
+    def setColsType(self):
+        self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
+        for index in self.indexes():
+            if index != "timestamp":
+                self.run_data[index] = pd.to_numeric(self.run_data[index])
 
     def rescale(self, col="altitude", min_bd=50):
         '''
@@ -160,9 +164,10 @@ class Run:
         
         #calculating the dissipation factor
         self.disp = np.mean(abs(rd['speed'] - rd['ideal_speed']) / rd['speed'])
+        self.setColsType()
         self.calcAvgValues()
     
-    def setBounds(self, lwbd = 2, upbd = None, all = False):   #actually the option 'all' it's not necessary
+    def setBounds(self, lwbd=2, upbd=2, all=False):   #actually the option 'all' it's not necessary
         '''
         lwbd: Int
         upbd: Int
@@ -170,12 +175,10 @@ class Run:
         set upper and lower limits of data (Trust-based) / limiti basati sulla attendibilità
         starting from 0 to n_data-1
         '''
-        if all == True:
+        if all==True:
             lwbd = 0
             upbd = 0
         else:
-            if not bool(upbd):
-                upbd = 2
             lwbd = max(lwbd,0)
             upbd = max(upbd,0)
         upbd = self.n_data - upbd        
@@ -185,17 +188,18 @@ class Run:
         self.run_data = pd.DataFrame(data,columns=names)
         self.n_data = len(self.run_data)
         #return self.run_data.iloc[lwbd:upbd]
+        self.setColsType()
         self.calcAvgValues()
         self.gearChangeDetect()
 
-    def exportCols(self, file_name, cols, rows = None):
+    def exportCols(self, file_name, cols, rows=None):
         '''
         file_name: String
         rows: list of Iterator (uInt) [Default: all]
         cols: List of index (String/column name)
         export some cols in a csv file
         '''
-        if rows == None:
+        if rows is None:
             rows = np.arange(self.n_data)
         util.writeCsvFile(file_name, self.run_data.iloc[rows][cols].values, cols)
     
@@ -339,29 +343,39 @@ class RunAnalysis:
             # plt.legend()
             # plt.show()
 
-    def comparation(self, keys=None, cols=[], opts="def", export_PDF=False, export_PNG=False, show=True):
+    def comparation(self, keys=None, cols=[], opts="def", export_PDF=False, export_PNG=False, show=True, vis_max=[]):
         '''
         keys: List of String (run ID)  default: all
         cols: List of List of Index (String/column name)  default: opts
         opts: "def", "Diego", "Matilde", "Enzo"
+        vis_max : List of String (Index) [visualize max]
         allow to comparate specified in cols of two or more races (listed in keys)
         '''
+        cmap = cm.get_cmap('nipy_spectral')   #choose colormap : 'gist_rainbow', 'jet', 'hsv'
+
         if cols==[]:
             cols = self.dict_opts[opts]
-        if not bool(keys):
+        if keys is None:
             keys = self.run_list.keys()
         if export_PDF==True:
             pdf = PdfPages("comparation"+".pdf")
+        
+        delta_max_colors = 0.1   #change this parameter to change color gradient (delta)
+        delta_run = 0.9/len(keys)
+        delta_colors = min(delta_run/len(cols), delta_max_colors)
+        delta_colors = np.linspace(0,delta_run,int((delta_run - 0) / delta_colors + 1))
+        delta_run = np.linspace(0.05,0.95,int(0.9 / delta_run + 1))
+        
         for plot in cols:
             flag = False
             for i, key in enumerate(keys):
                 run = self.run_list.get(key)
                 id = " run "+ str(i+1)
-                for col in plot:
+                for j, col in enumerate(plot):
                     if col in run.indexes():
                         flag = True
                         if col=="altitude":
-                            plt.plot(run.run_data["distance"],run.rescale(col),label=col+id)
+                            plt.plot(run.run_data["distance"],run.rescale(col),label=col+id,color=cmap(delta_run[i]+delta_colors[j]))
                             # h_i = run.run_data.at[0,"altitude"]
                             # h_f = run.run_data.at[run.n_data-1,"altitude"]
                             # # h_min = min(run.run_data["altitude"])
@@ -373,7 +387,24 @@ class RunAnalysis:
                             # plt.text(run.run_data.at[0,"distance"] + marginex1, run.rescale(col)[0] + marginey1, "h_i : " + str("%.2f" % h_i) + "m")
                             # plt.text(run.run_data.at[run.n_data-1,"distance"] + marginex2, run.rescale(col)[run.n_data-1] + marginey2, "h_f : " + str("%.2f" % h_f) + "m", horizontalalignment="right")
                         else:
-                            plt.plot(run.run_data["distance"],run.run_data[col],label=col+id)
+                            plt.plot(run.run_data["distance"],run.run_data[col],label=col+id,color=cmap(delta_run[i]+delta_colors[j]))
+                        if col in vis_max:
+                            #calculate x and y of max
+                            x = run.run_data[col].idxmax()
+                            y = run.run_data.at[x, col]
+                            x = run.run_data.at[x,"distance"]
+                            marginx = 0
+                            marginy = 3
+                            plt.text(x + marginx, y + marginy, col+"_max : " + str("%.2f" % y))
+                            plt.scatter(x, y, s=20)
+                # for index in vis_max:
+                #     #calculate x and y of max
+                #     x = run.run_data[index].idxmax()
+                #     y = run.run_data.at[x, index]
+                #     x = run.run_data.at[x,"distance"]
+                #     marginx = 0
+                #     marginy = 3
+                #     plt.text(x + marginx, y + marginy, index+"_max : " + str("%.2f" % y))
             if flag==True:
                 plt.title("Comparation")
                 plt.legend()
@@ -536,10 +567,10 @@ class RunAnalysis:
         export: Bool
         simulate self.prediction knowing input_values, using self.model
         '''
-        if self.model==None:
+        if self.model is None:
             print("No model")
             return
-        if input_values==None:
+        if input_values is None:
             tmp = {}
             for index in self.model_data:
                 tmp[index] = self.generateCol(col=index)

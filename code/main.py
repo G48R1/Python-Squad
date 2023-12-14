@@ -58,7 +58,7 @@ an_run.uploadFolder(folder_path=dataset_path_Diego, conds_file=conditions_path)
 
 # an_run.plotEach()
 
-an_run.comparation(opts="Diego", export_PDF=True, show=True)   #comparation between specified or default run with complete arbitrariness on the management of graphs
+an_run.comparation(opts="Diego", export_PDF=True, show=True, vis_max=["speed"])   #comparation between specified or default run with complete arbitrariness on the management of graphs
 
 #___________________
 ## Run object : manual initialization
