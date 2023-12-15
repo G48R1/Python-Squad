@@ -59,19 +59,35 @@ class Run:
         '''
         self.bike_info = bike_info
 
-    def readRun(self, file_name, cut=True):
+    def readRun(self, file_name, cut=True, gear_detect=True):
+        '''
+        file_name : String (Path)
+        cut : Bool (call setBounds)
+        gear_detect : Bool (call gearChangeDetect)
+        read data from csv file. rescale distance starting by 0
+        '''
         self.id_run = file_name.rsplit('/',1)[-1].replace(".csv","")   #extraction of file name from path
         self.run_data = util.csv2Df(file_name)
         self.setColsType()
+        self.run_data["distance"] = self.rescale(col="distance",min_bd=0)
         self.n_data = len(self.run_data)
         if cut==True:
             self.setBounds(lwbd=2,upbd=2)
-        self.gearChangeDetect()   #comment this line if there isn't enough bike info
+        if gear_detect==True:
+            self.gearChangeDetect()   #comment this line if there isn't enough bike info
 
-    def setColsType(self):
-        self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
-        for index in self.indexes():
-            if index != "timestamp":
+    def setColsType(self, cols=[]):
+        '''
+        cols : List of String (Index)
+        '''
+        if cols==[]:
+            cols = self.indexes()
+        else:
+            cols = list(set(cols).intersection(self.indexes()))                
+        for index in cols:
+            if index == "timestamp":
+                self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
+            else:
                 self.run_data[index] = pd.to_numeric(self.run_data[index])
 
     def rescale(self, col="altitude", min_bd=50):
@@ -91,7 +107,7 @@ class Run:
         '''
         if len(col) == self.n_data:
             self.run_data[col_name] = col
-            self.run_data[col_name] = pd.to_numeric(self.run_data[col_name])
+            self.setColsType(cols=[col_name])
         else:
             print("length not equal: ",len(col)," not equal to ",self.n_data)
         self.calcAvgValues()
@@ -164,7 +180,8 @@ class Run:
         
         #calculating the dissipation factor
         self.disp = np.mean(abs(rd['speed'] - rd['ideal_speed']) / rd['speed'])
-        self.setColsType()
+        self.setColsType(cols=["RPMw_bo_RPMp","ideal_speed"])
+        rd['gear'] = pd.to_numeric(rd['gear'],downcast='integer')
         self.calcAvgValues()
     
     def setBounds(self, lwbd=2, upbd=2, all=False):   #actually the option 'all' it's not necessary
@@ -211,22 +228,23 @@ class Run:
         '''
         if cols == []:
             cols = ["speed", "ideal_speed", "power", "heart_rate"]
+        else:
+            cols = list(set(cols).intersection(self.indexes()))                
         for col in cols:
-            if col in self.indexes():
-                if col=='altitude':
-                    plt.plot(self.run_data["distance"],self.rescale(col,alt_min_bd),label=col)
-                    h_i = self.run_data.at[0,"altitude"]
-                    h_f = self.run_data.at[self.n_data-1,"altitude"]
-                    # h_min = min(self.run_data["altitude"])
-                    # h_max = max(self.run_data["altitude"])
-                    marginex1 = - 200/8000 * (self.run_data.at[self.n_data-1,"distance"]-self.run_data.at[0,"distance"])
-                    marginey1 = -4
-                    marginex2 = + 200/8000 * (self.run_data.at[self.n_data-1,"distance"]-self.run_data.at[0,"distance"])
-                    marginey2 = -3.5
-                    plt.text(self.run_data.at[0,"distance"] + marginex1, self.rescale(col,alt_min_bd)[0] + marginey1, "h_i : " + str("%.2f" % h_i) + "m")
-                    plt.text(self.run_data.at[self.n_data-1,"distance"] + marginex2, self.rescale(col,alt_min_bd)[self.n_data-1] + marginey2, "h_f : " + str("%.2f" % h_f) + "m", horizontalalignment="right")
-                else:
-                    plt.plot(self.run_data["distance"],self.run_data[col],label=col)
+            if col=='altitude':
+                plt.plot(self.run_data["distance"],self.rescale(col,alt_min_bd),label=col)
+                h_i = self.run_data.at[0,"altitude"]
+                h_f = self.run_data.at[self.n_data-1,"altitude"]
+                # h_min = min(self.run_data["altitude"])
+                # h_max = max(self.run_data["altitude"])
+                marginex1 = - 200/8000 * (self.run_data.at[self.n_data-1,"distance"]-self.run_data.at[0,"distance"])
+                marginey1 = -4
+                marginex2 = + 200/8000 * (self.run_data.at[self.n_data-1,"distance"]-self.run_data.at[0,"distance"])
+                marginey2 = -3.5
+                plt.text(self.run_data.at[0,"distance"] + marginex1, self.rescale(col,alt_min_bd)[0] + marginey1, "h_i : " + str("%.2f" % h_i) + "m")
+                plt.text(self.run_data.at[self.n_data-1,"distance"] + marginex2, self.rescale(col,alt_min_bd)[self.n_data-1] + marginey2, "h_f : " + str("%.2f" % h_f) + "m", horizontalalignment="right")
+            else:
+                plt.plot(self.run_data["distance"],self.run_data[col],label=col)
         plt.title("Data: run "+self.id_run)
         plt.legend()
         if export==True:
@@ -279,23 +297,23 @@ class RunAnalysis:
     
     def __init__(self):
         self.run_list = {}   #dictionary
-        self.poly = None
-        self.model = None
-        self.model_data = None
-        self.prediction = None
-        self.dict_opts = {
+        self._poly = None
+        self._model = None
+        self._model_data = None
+        self._prediction = None
+        self._dict_opts = {
             "def": [["speed","power","ideal_speed"],["altitude","heart_rate"]],
             "Diego": [["speed","power"],["altitude","heart_rate"],["speed","ideal_speed"]],
             "Matilde": [["speed","power"],["heart_rate"]],
-            "Enzo": [["speed","power"],["speed","ideal_speed"]]
+            "Enzo": [["speed","power"],["cadence","ideal_speed"]]
         }
     
-    def addRun(self, run):
+    def addRun(self, run, replace=False):
         '''
         run: Run Object
         add a Run object to the dictionary
         '''
-        if run.id_run not in self.run_list:
+        if (replace==False and run.id_run not in self.run_list) or replace==True:
             self.run_list[run.id_run] = run
         else:
             print("run "+run.id_run+" already uploaded")
@@ -307,7 +325,7 @@ class RunAnalysis:
         '''
         self.run_list.pop(id_run,'Not found')
 
-    def uploadFolder(self, folder_path, conds_file):
+    def uploadFolder(self, folder_path, conds_file, replace=False):
         '''
         folder_path : String (Path)
         conds_file : String (Excel file)
@@ -324,7 +342,7 @@ class RunAnalysis:
                 run_path = os.path.join(folder_path, file)
                 run_path = run_path.replace("\\","/")
                 run.readRun(run_path)
-                self.addRun(run)
+                self.addRun(run,replace)
 
     def plotEach(self, cols=[], export=False):
         '''
@@ -343,60 +361,60 @@ class RunAnalysis:
             # plt.legend()
             # plt.show()
 
-    def comparation(self, keys=None, cols=[], opts="def", export_PDF=False, export_PNG=False, show=True, vis_max=[]):
+    def comparation(self, keys=None, cols="def", export_PDF=False, export_PNG=False, show=True, vis_max=[]):
         '''
         keys: List of String (run ID)  default: all
-        cols: List of List of Index (String/column name)  default: opts
-        opts: "def", "Diego", "Matilde", "Enzo"
+        cols: List of List of Index (String/column name)  default opts: "def", "Diego", "Matilde", "Enzo"
         vis_max : List of String (Index) [visualize max]
         allow to comparate specified in cols of two or more races (listed in keys)
         '''
         cmap = cm.get_cmap('nipy_spectral')   #choose colormap : 'gist_rainbow', 'jet', 'hsv'
 
-        if cols==[]:
-            cols = self.dict_opts[opts]
+        if isinstance(cols,str):
+            cols = self._dict_opts[cols]
         if keys is None:
             keys = self.run_list.keys()
         if export_PDF==True:
-            pdf = PdfPages("comparation"+".pdf")
+            pdf = PdfPages("comparation"+".pdf")   #TODO add driver name
         
-        delta_max_colors = 0.1   #change this parameter to change color gradient (delta)
+        delta_max_colors = 0.05   #change this parameter to change color gradient (delta)
         delta_run = 0.9/len(keys)
         delta_colors = min(delta_run/len(cols), delta_max_colors)
         delta_colors = np.linspace(0,delta_run,int((delta_run - 0) / delta_colors + 1))
         delta_run = np.linspace(0.05,0.95,int(0.9 / delta_run + 1))
+        alpha = util.f_alpha(len(keys))
         
         for plot in cols:
             flag = False
             for i, key in enumerate(keys):
                 run = self.run_list.get(key)
                 id = " run "+ str(i+1)
-                for j, col in enumerate(plot):
-                    if col in run.indexes():
-                        flag = True
-                        if col=="altitude":
-                            plt.plot(run.run_data["distance"],run.rescale(col),label=col+id,color=cmap(delta_run[i]+delta_colors[j]))
-                            # h_i = run.run_data.at[0,"altitude"]
-                            # h_f = run.run_data.at[run.n_data-1,"altitude"]
-                            # # h_min = min(run.run_data["altitude"])
-                            # # h_max = max(run.run_data["altitude"])
-                            # marginex1 = - 200/8000 * (run.run_data.at[run.n_data-1,"distance"]-run.run_data.at[0,"distance"])
-                            # marginey1 = -4
-                            # marginex2 = + 200/8000 * (run.run_data.at[run.n_data-1,"distance"]-run.run_data.at[0,"distance"])
-                            # marginey2 = -3.5
-                            # plt.text(run.run_data.at[0,"distance"] + marginex1, run.rescale(col)[0] + marginey1, "h_i : " + str("%.2f" % h_i) + "m")
-                            # plt.text(run.run_data.at[run.n_data-1,"distance"] + marginex2, run.rescale(col)[run.n_data-1] + marginey2, "h_f : " + str("%.2f" % h_f) + "m", horizontalalignment="right")
-                        else:
-                            plt.plot(run.run_data["distance"],run.run_data[col],label=col+id,color=cmap(delta_run[i]+delta_colors[j]))
-                        if col in vis_max:
-                            #calculate x and y of max
-                            x = run.run_data[col].idxmax()
-                            y = run.run_data.at[x, col]
-                            x = run.run_data.at[x,"distance"]
-                            marginx = 0
-                            marginy = 3
-                            plt.text(x + marginx, y + marginy, col+"_max : " + str("%.2f" % y))
-                            plt.scatter(x, y, s=20)
+                plot_cols = list(set(plot).intersection(run.indexes()))
+                for j, col in enumerate(plot_cols):
+                    flag = True
+                    if col=="altitude":
+                        plt.plot(run.run_data["distance"],run.rescale(col),label=col+id,color=cmap(delta_run[i]+delta_colors[j]),alpha=alpha)
+                        # h_i = run.run_data.at[0,"altitude"]
+                        # h_f = run.run_data.at[run.n_data-1,"altitude"]
+                        # # h_min = min(run.run_data["altitude"])
+                        # # h_max = max(run.run_data["altitude"])
+                        # marginex1 = - 200/8000 * (run.run_data.at[run.n_data-1,"distance"]-run.run_data.at[0,"distance"])
+                        # marginey1 = -4
+                        # marginex2 = + 200/8000 * (run.run_data.at[run.n_data-1,"distance"]-run.run_data.at[0,"distance"])
+                        # marginey2 = -3.5
+                        # plt.text(run.run_data.at[0,"distance"] + marginex1, run.rescale(col)[0] + marginey1, "h_i : " + str("%.2f" % h_i) + "m")
+                        # plt.text(run.run_data.at[run.n_data-1,"distance"] + marginex2, run.rescale(col)[run.n_data-1] + marginey2, "h_f : " + str("%.2f" % h_f) + "m", horizontalalignment="right")
+                    else:
+                        plt.plot(run.run_data["distance"],run.run_data[col],label=col+id,color=cmap(delta_run[i]+delta_colors[j]),alpha=alpha)
+                    if col in vis_max:
+                        #calculate x and y of max
+                        x = run.run_data[col].idxmax()
+                        y = run.run_data.at[x, col]
+                        x = run.run_data.at[x,"distance"]
+                        marginx = 0
+                        marginy = 3
+                        plt.text(x + marginx, y + marginy, col+"_max : " + str("%.2f" % y))
+                        plt.scatter(x, y, s=20)
                 # for index in vis_max:
                 #     #calculate x and y of max
                 #     x = run.run_data[index].idxmax()
@@ -443,7 +461,7 @@ class RunAnalysis:
     #         plt.close()
 
         
-    def calcAvgRun(self):   #da controllare se sono di lunghezze diverse
+    def calcAvgRun(self):   #TODO add BikeInfo
         '''
         calculate average run
         '''
@@ -515,16 +533,16 @@ class RunAnalysis:
         all_values = []
         all_values.extend(input_values)
         all_values.append(output_value)
-        self.model_data = input_values
-        self.prediction = output_value
+        self._model_data = input_values
+        self._prediction = output_value
         for run in self.run_list.values():
             for value in all_values:
                 if value not in run.indexes():
                     print("no data for \""+value+"\"")
                     return
         
-        self.poly = PolynomialFeatures(degree)
-        self.model = LinearRegression()
+        self._poly = PolynomialFeatures(degree)
+        self._model = LinearRegression()
 
         datasets = self.run_list.values()
         # Addestra e valuta il modello su ciascun dataset
@@ -533,13 +551,13 @@ class RunAnalysis:
             y = dataset.run_data[output_value].values
             
             # per evitare il warning (NON TESTATO)
-            # preprocessor = ColumnTransformer(transformers=[('poly', self.poly, dataset.columns)],remainder='passthrough')
+            # preprocessor = ColumnTransformer(transformers=[('poly', self._poly, dataset.columns)],remainder='passthrough')
             # X_poly = preprocessor.fit_transform(dataset)
 
-            X_poly = self.poly.fit_transform(X)
-            self.model.fit(X_poly, y)
+            X_poly = self._poly.fit_transform(X)
+            self._model.fit(X_poly, y)
 
-            predictions = self.model.predict(X_poly)
+            predictions = self._model.predict(X_poly)
 
             mse = mean_squared_error(y, predictions)
             r2 = r2_score(y, predictions)
@@ -565,24 +583,24 @@ class RunAnalysis:
         input_values: DataFrame
         plot: Bool
         export: Bool
-        simulate self.prediction knowing input_values, using self.model
+        simulate self._prediction knowing input_values, using self._model
         '''
-        if self.model is None:
+        if self._model is None:
             print("No model")
             return
         if input_values is None:
             tmp = {}
-            for index in self.model_data:
+            for index in self._model_data:
                 tmp[index] = self.generateCol(col=index)
             input_values = pd.DataFrame(tmp)
             
-        if not input_values.columns.equals(pd.Index(self.model_data)):
+        if not input_values.columns.equals(pd.Index(self._model_data)):
             print("Columns must match")
             return
 
         simulated_data = input_values
-        X_sim_poly = self.poly.transform(simulated_data)
-        simulated_data[self.prediction] = self.model.predict(X_sim_poly)
+        X_sim_poly = self._poly.transform(simulated_data)
+        simulated_data[self._prediction] = self._model.predict(X_sim_poly)
         
         sim_run = Run()
         sim_run.id_run = "sim_run"
@@ -593,21 +611,21 @@ class RunAnalysis:
         self.addRun(sim_run)
         
         if plot==True:
-            tmp = np.arange(0,len(simulated_data[self.prediction]))
-            plt.scatter(tmp, simulated_data[self.prediction], color='red', label='Simulated '+self.prediction)
-            for index in self.model_data:
+            tmp = np.arange(0,len(simulated_data[self._prediction]))
+            plt.scatter(tmp, simulated_data[self._prediction], color='red', label='Simulated '+self._prediction)
+            for index in self._model_data:
                 plt.scatter(tmp, simulated_data[index], color='orange', label=index)
             plt.xlabel('distance')
-            plt.ylabel(self.prediction+' Profile')
+            plt.ylabel(self._prediction+' Profile')
             plt.title('Simulation Results')
             plt.legend()
             plt.show()
             
-            # plt.scatter(simulated_data['distance'], simulated_data[self.prediction], color='red', label='Simulated '+self.prediction)
-            # for index in self.model_data:
+            # plt.scatter(simulated_data['distance'], simulated_data[self._prediction], color='red', label='Simulated '+self._prediction)
+            # for index in self._model_data:
             #     plt.scatter(simulated_data['distance'], simulated_data[index], color='orange', label=index)
             # plt.xlabel('distance')
-            # plt.ylabel(self.prediction+' Profile')
+            # plt.ylabel(self._prediction+' Profile')
             # plt.title('Simulation Results')
             # plt.legend()
             # plt.show()

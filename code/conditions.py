@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import math
 
-list_of_object = {"Vehicle": "bike", "Driver": "driver", "Wheels": "wheels", "GearBox": "gear_box"}   #conversion from Excel name (in conditions file) to Class name
+_excel2bikeinfo_attributes = {"Vehicle": "bike", "Driver": "driver", "Wheels": "wheels", "GearBox": "gear_box"}   #conversion from Excel name (in conditions file) to Class name
 
 class Vehicle:
     '''Contains information of a vehicle (bike)'''
@@ -76,7 +76,7 @@ class GearBox:
         self.chainring = chainring   #moltiplica
         self.sec_ratio = sec_ratio   #secondary ratio / rimando finale
         self._string_attributes = []
-        self.list_attribute = ["gear_box", "sec_ratio"]
+        self._list_attributes = ["gear_box", "sec_ratio"]
 
     def setInfo(self, gear_box=None, chainring=None, sec_ratio=None):
         '''
@@ -97,7 +97,7 @@ class GearBox:
         for attribute, value in matrix:
             if value != '':
                 if attribute not in self._string_attributes:
-                    if attribute in self.list_attribute:
+                    if attribute in self._list_attributes:
                         value = [int(num) for num in value.split(delimiter)]
                     else:
                         value = int(value)
@@ -274,8 +274,8 @@ class BikeInfo:
         # Delete void rows (NaN)
         df = df.dropna(axis=0, how='all')
         for attribute, value in df.values:
-            if attribute in list_of_object.keys():
-                obj_name = list_of_object[attribute]
+            if attribute in _excel2bikeinfo_attributes.keys():
+                obj_name = _excel2bikeinfo_attributes[attribute]
                 obj = getattr(self,obj_name)
             else:
                 # if pd.isna(value):   #comment these 2 lines if
@@ -293,8 +293,8 @@ class BikeInfo:
             value = row[1]
             if str(attribute).strip()=="":
                 pass
-            elif attribute in list_of_object.keys():
-                obj_name = list_of_object[attribute]
+            elif attribute in _excel2bikeinfo_attributes.keys():
+                obj_name = _excel2bikeinfo_attributes[attribute]
                 obj = getattr(self,obj_name)
             else:
                 if value=="":   #comment these 2 lines if

@@ -67,6 +67,12 @@ def writeCsvFile(file_name, data, header):   #TODO TO BE MODIFIED
             writer.writerow(row)
 
 def getDatasetPath(driver_name, path_in=None, dataset_path=None):
+    '''
+    driver_name : String (folder name)
+    path_in : String (Path) default : current
+    dataset_path : String (Path)
+    return Dataset Path given folder name (driver_name)
+    '''
     if path_in is None:
         path_in = os.getcwd()
     if dataset_path is None:
@@ -77,7 +83,18 @@ def getCondPath(file_name):
     return os.path.abspath(os.path.join(os.getcwd(), dtcond_path+file_name)).replace("\\","/")
 
 def joinPath(folder_path, file_name):
-    return os.path.join(folder_path, file_name).replace("\\","/")
+    return os.path.join(folder_path, file_name).replace("\\","/")   # meglio quello sotto
+    # return os.path.abspath(os.path.join(folder_path, file_name)).replace("\\","/")
+
+def f_alpha(n, half=5):
+    '''
+    n : Int (number of lines in a plot)
+    half : color opacity halving parameter
+    generate alpha for a plot using arctan function based on n.
+    half=5 means that if we have 5 lines the opacity of each is set to 0.5;
+    if we have less lines the opacity is greater
+    '''
+    return - 1/np.pi*np.arctan(n-half) + 0.5
 
 # def readFile(file_name):
 #     '''read csv file function

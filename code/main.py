@@ -29,36 +29,54 @@ dataset_path_Matilde = util.getDatasetPath("Matilde")
 dataset_path_Diego = util.getDatasetPath("Diego")
 dataset_path_Enzo = util.getDatasetPath("Enzo")
 
-an_run = RunAnalysis()
+an_run_Matilde = RunAnalysis()
+an_run_Enzo = RunAnalysis()
+an_run_Diego = RunAnalysis()
 
 # "BM_130923_AM1.csv"
 
-run1 = Run()
-file_name = util.joinPath(dataset_path_Matilde, "Matilde_13_09_2023_AM.csv")
-run1.bike_info.getInfoFromCsv(util.getCondPath("Phoenix_Matilde.csv"))
-run1.readRun(file_name)
-run1.plot(cols=["speed","altitude"])
+## upload an entire folder (Matilde)
+conditions_path = util.getCondPath("Phoenix_Matilde.xlsx")
+an_run_Matilde.uploadFolder(folder_path=dataset_path_Matilde, conds_file=conditions_path)
 
+an_run_Matilde.comparation(cols="Matilde", export_PDF=False, show=True, vis_max=["speed"])   #comparation between specified or default run with complete arbitrariness on the management of graphs
+
+## upload an entire folder (Enzo)
+conditions_path = util.getCondPath("Phoenix_Enzo.xlsx")
+an_run_Enzo.uploadFolder(folder_path=dataset_path_Enzo, conds_file=conditions_path)
+
+an_run_Enzo.comparation(cols="Enzo", export_PDF=False, show=True, vis_max=["speed"])
+
+## upload an entire folder (Diego)
+conditions_path = util.getCondPath("Cerberus_Diego.xlsx")
+an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, conds_file=conditions_path, replace=False)
+
+# an_run_Diego.plotEach()
+an_run_Diego.comparation(cols="Diego", export_PDF=True, show=True, vis_max=["speed"])
+
+#___________________
+## example of uploading a single run (Matilde)
+# run1 = Run()
+# file_name = util.joinPath(dataset_path_Matilde, "Matilde_15_09_2023_AM.csv")
+# run1.bike_info.getInfoFromExcel(util.getCondPath("Phoenix_Matilde.xlsx"))
+# run1.readRun(file_name)
+# run1.plot(cols=["speed","altitude"])
+# an_run_Matilde.addRun(run1)
+
+## example of uploading two run singly (Diego)
 # run2 = Run()
 # file_name = util.joinPath(dataset_path_Diego, "Diego_15_09_2023_AM_2.csv")
 # run2.bike_info.getInfoFromExcel(util.getCondPath("Cerberus_Diego.xlsx"))
 # run2.readRun(file_name)
 # run2.gearChangeDetect(initial_gear=1)
-# an_run.addRun(run2)
+# an_run_Diego.addRun(run2)
 
 # run3 = Run()
 # file_name = util.joinPath(dataset_path_Diego, "Diego_13_09_2023_AM_2.csv")
 # run3.bike_info.getInfoFromCsv(util.getCondPath("Cerberus_Diego.csv"))
 # run3.readRun(file_name)
 # run2.gearChangeDetect(initial_gear=1)
-# an_run.addRun(run3)
-
-conditions_path = util.getCondPath("Cerberus_Diego.xlsx")
-an_run.uploadFolder(folder_path=dataset_path_Diego, conds_file=conditions_path)
-
-# an_run.plotEach()
-
-an_run.comparation(opts="Diego", export_PDF=True, show=True, vis_max=["speed"])   #comparation between specified or default run with complete arbitrariness on the management of graphs
+# an_run_Diego.addRun(run3)
 
 #___________________
 ## Run object : manual initialization
@@ -87,15 +105,15 @@ an_run.comparation(opts="Diego", export_PDF=True, show=True, vis_max=["speed"]) 
 #___________________
 ## RunAnalysis object
 #
-# an_run.plotEach(export=True)   #plot and export each run, representing specified or default cols
-# an_run.comparation(keys=["Diego_15_09_2023_AM_2.csv","Diego_13_09_2023_AM_2.csv"],
+# an_run_Diego.plotEach(export=True)   #plot and export each run, representing specified or default cols
+# an_run_Diego.comparation(keys=["Diego_15_09_2023_AM_2.csv","Diego_13_09_2023_AM_2.csv"],
 #                    cols=[["speed","heart_rate"],["power", "heart_rate"],["ideal_speed","power","altitude"]],export_PDF=True)   #complete arbitrariness on the management of graphs
-# an_run.calcAvgRun()
-# an_run.run_list["avg_run"].plot()   #plot the average run
+# an_run_Diego.calcAvgRun()
+# an_run_Diego.run_list["avg_run"].plot()   #plot the average run
 
 # model and simulation
-# an_run.modeling(degree=3, input_values=["power","heart_rate","cadence"],output_value="speed",plot=True)   #create the model based on power, heart rate and cadence
-# an_run.simulate(plot=True)
+# an_run_Diego.modeling(degree=3, input_values=["power","heart_rate","cadence"],output_value="speed",plot=True)   #create the model based on power, heart rate and cadence
+# an_run_Diego.simulate(plot=True)
 
 
 
