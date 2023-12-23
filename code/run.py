@@ -18,7 +18,7 @@ os.chdir(os.path.dirname(__file__))   #set the right path (could help in vscode 
 
 class Run:
     
-    def __init__(self):
+    def __init__(self, file_name=None, cond_file=None):
         '''
         id_run: String (file name)
         atm_cond: AtmConditions Object
@@ -35,6 +35,9 @@ class Run:
         self.n_data = None   #length of run_data
         self.disp = None   #displacement / dissipation factor
         self.avg_values = {}
+        if file_name is not None:
+            self.setBikeInfo(cond_file=cond_file)
+            self.readRun(file_name=file_name)
         
     def clean(self):
         self.id_run = None
@@ -52,12 +55,15 @@ class Run:
         '''
         self.stm_cond = atm_cond
     
-    def setBikeInfo(self, bike_info):
+    def setBikeInfo(self, bike_info=BikeInfo(), cond_file=None):
         '''
         bike_info: BikeInfo Object
         set bike info
         '''
-        self.bike_info = bike_info
+        if cond_file is not None:
+            self.bike_info.getInfoFromExcel(cond_file)
+        else:
+            self.bike_info = bike_info
 
     def readRun(self, file_name, cut=True, gear_detect=True):
         '''
@@ -304,15 +310,17 @@ class RunAnalysis:
         self._dict_opts = {
             "def": [["speed","power","ideal_speed"],["altitude","heart_rate"]],
             "Diego": [["speed","power"],["altitude","heart_rate"],["speed","ideal_speed"]],
-            "Matilde": [["speed","power"],["heart_rate"]],
+            "Matilde": [["speed","power"],["power","cadence"]],
             "Enzo": [["speed","power"],["cadence","ideal_speed"]]
         }
     
-    def addRun(self, run, replace=False):
+    def addRun(self, run=None, file_name=None, cond_file=None, replace=False):
         '''
         run: Run Object
         add a Run object to the dictionary
         '''
+        if file_name is not None:
+            run = Run(file_name,cond_file)
         if (replace==False and run.id_run not in self.run_list) or replace==True:
             self.run_list[run.id_run] = run
         else:
@@ -333,16 +341,18 @@ class RunAnalysis:
         '''
         # run = Run()
         # run.bike_info.getInfoFromExcel(conds_file)
-                
         for file in os.listdir(folder_path):
             if ".csv" in file:
-                run = Run()
-                run.bike_info.getInfoFromExcel(conds_file)
+                # run = Run()
+                # run.bike_info.getInfoFromExcel(conds_file)
                 # run.clean()
                 run_path = os.path.join(folder_path, file)
+                # print(run_path)
                 run_path = run_path.replace("\\","/")
-                run.readRun(run_path)
-                self.addRun(run,replace)
+                # print(run_path)
+                # run.readRun(file_name=run_path)
+                # self.addRun(run,replace=replace)
+                self.addRun(file_name=run_path,cond_file=conds_file)
 
     def plotEach(self, cols=[], export=False):
         '''
@@ -361,7 +371,7 @@ class RunAnalysis:
             # plt.legend()
             # plt.show()
 
-    def comparation(self, keys=None, cols="def", export_PDF=False, export_PNG=False, show=True, vis_max=[]):
+    def comparation(self, keys=[], cols="def", export_PDF=False, export_PNG=False, show=True, vis_max=[]):
         '''
         keys: List of String (run ID)  default: all
         cols: List of List of Index (String/column name)  default opts: "def", "Diego", "Matilde", "Enzo"
@@ -372,7 +382,7 @@ class RunAnalysis:
 
         if isinstance(cols,str):
             cols = self._dict_opts[cols]
-        if keys is None:
+        if keys==[]:
             keys = self.run_list.keys()
         if export_PDF==True:
             pdf = PdfPages("comparation"+".pdf")   #TODO add driver name
