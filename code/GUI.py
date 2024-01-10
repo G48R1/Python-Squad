@@ -6,7 +6,7 @@ import os
 os.chdir(os.path.dirname(__file__))
 
 initialdir_file = "../Dataset"
-initialdir_cond = "../Dataset/conditions"
+initialdir_cond = "../Dataset/couples"
 
 def browseFile(entry, initialdir=os.getcwd()):
     file_selected = filedialog.askopenfilename(initialdir=initialdir, title="Select file")   #, filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
@@ -44,9 +44,13 @@ def clear_entries(entry_list):
         
 def nextRun(analysis,file_path,cond_file_path,folder_path,cond_folder_path,entry_list):
     if len(folder_path.get()) != 0:
-        analysis.uploadFolder(folder_path.get(),cond_folder_path.get())
+        analysis.uploadFolder(folder_path=folder_path.get(),settings_file=cond_folder_path.get())
     else:
-        analysis.addRun(file_name=file_path.get(),cond_file=cond_file_path.get())
+        if analysis.settings is not None and cond_file_path.get()=='':
+            pass
+        else:
+            analysis.addSettings(cond_file_path.get())
+        analysis.addRun(file_name=file_path.get()) #,cond_file=cond_file_path.get())
     clear_entries(entry_list)
 
 def toggle_frame(frame_index):
@@ -153,7 +157,7 @@ def optsSelection(root):
     opts_strvar.trace_add("write", toggle_selezione)
     opts_var = opts_strvar.get()
 
-def goAnalyze():
+def goAnalyze(export):
     global frame_list, select_run_list, opts_strvar
     keys = [run_id for run_id, var in zip(analysis.run_list.keys(),select_run_list) if var.get() != 0]
     cols = []
@@ -164,7 +168,9 @@ def goAnalyze():
             cols.append(get_selected_values(index))
         if cols==[]:
             cols="def"
-    analysis.comparation(keys=keys,cols=cols)
+    if export.get()!=0:
+        export = True
+    analysis.comparation(keys=keys,cols=cols,export_PDF=export)
 
 def go(window):
     window.destroy()
@@ -192,7 +198,11 @@ def go(window):
     add_button = Button(root, text="Add Plot", command=lambda: create_frame_with_button(root))
     add_button.pack(pady=5)
     
-    go_button = Button(root, text="Let's go!", command=goAnalyze)
+    var = IntVar()
+    export_button = Checkbutton(root, text="Export PDF", variable=var)
+    export_button.pack(pady=5)
+    
+    go_button = Button(root, text="Let's go!", command=lambda: goAnalyze(var))
     go_button.pack(pady=5)
     
     frame_opts = LabelFrame(root,text="choose default plot scheme")
@@ -205,7 +215,7 @@ def go(window):
 # Create the main window
 root = Tk()
 root.title("Run Analysis")
-root.geometry("760x300+410+150")   #dimensions of the window + positioning
+root.geometry("760x300+400+150")   #dimensions of the window + positioning
 root.minsize(240,180)
 root.maxsize(1200,900)
 root.iconbitmap("biking.ico")   #logo
@@ -222,13 +232,13 @@ frame_list.append(frame1)
 frame1.grid(row=0, column=1, padx=10, pady=10)
 # frame1.place(relx=0.5,rely=0.1,anchor=CENTER)
 file_path = generateEntry(frame1,"file",initialdir_file,0,entry_list)
-cond_file_path = generateEntry(frame1,"conditions file",initialdir_cond,1,entry_list)
+cond_file_path = generateEntry(frame1,"settings file",initialdir_cond,1,entry_list)
 
 frame2 = LabelFrame(root, text="Upload entire folder", background="orange")
 frame_list.append(frame2)
 # frame2.pack(padx=10, pady=10)
 folder_path = generateEntry(frame2,"folder",initialdir_file,0,entry_list,folder=True)
-cond_folder_path = generateEntry(frame2,"conditions file",initialdir_cond,1,entry_list)
+cond_folder_path = generateEntry(frame2,"settings file",initialdir_cond,1,entry_list)
 
 bt_single_run = Button(root,text="Upload single run",command=lambda: toggle_frame(0))
 # bt_single_run.pack(padx=5,pady=5)

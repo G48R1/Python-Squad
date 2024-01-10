@@ -18,7 +18,7 @@ os.chdir(os.path.dirname(__file__))   #set the right path (could help in vscode 
 
 class Run:
     
-    def __init__(self, file_name=None, cond_file=None):
+    def __init__(self, file_name=None, cond_file=None, settings_file=None):
         '''
         id_run: String (file name)
         atm_cond: AtmConditions Object
@@ -28,6 +28,7 @@ class Run:
         disp: Float (displacement)
         avg_values: Dict
         '''
+        self.num_id = None
         self.id_run = None
         self.atm_cond = None
         self.bike_info = BikeInfo()
@@ -36,8 +37,11 @@ class Run:
         self.disp = None   #displacement / dissipation factor
         self.avg_values = {}
         if file_name is not None:
-            self.setBikeInfo(cond_file=cond_file)
-            self.readRun(file_name=file_name)
+            if settings_file is not None:
+                self.readRun(file_name=file_name, settings_file=settings_file)
+            else:
+                self.setBikeInfo(cond_file=cond_file)
+                self.readRun(file_name=file_name)
         
     def clean(self):
         self.id_run = None
@@ -55,6 +59,17 @@ class Run:
         '''
         self.stm_cond = atm_cond
     
+    def setSettings(self, file_name, settings_file):
+        column_names = ["num", "idrun", "cond_file"]
+        df = pd.read_excel(settings_file, header=1, names=column_names)
+        # Delete void rows (NaN)
+        df = df.dropna(axis=0, how='all')
+        index = df.index[df.idrun == file_name+".csv"].values[0]
+        self.num_id = df.at[index,"num"]
+        cond_file = df.at[index,"cond_file"]
+        cond_file = util.getCondPath(cond_file)
+        self.setBikeInfo(cond_file=cond_file)
+
     def setBikeInfo(self, bike_info=BikeInfo(), cond_file=None):
         '''
         bike_info: BikeInfo Object
@@ -65,7 +80,7 @@ class Run:
         else:
             self.bike_info = bike_info
 
-    def readRun(self, file_name, cut=True, gear_detect=True):
+    def readRun(self, file_name, cut=True, gear_detect=True, settings_file=None):
         '''
         file_name : String (Path)
         cut : Bool (call setBounds)
@@ -73,6 +88,10 @@ class Run:
         read data from csv file. rescale distance starting by 0
         '''
         self.id_run = file_name.rsplit('/',1)[-1].replace(".csv","")   #extraction of file name from path
+        #######
+        if settings_file is not None:
+            self.setSettings(self.id_run, settings_file)
+        #######
         self.run_data = util.csv2Df(file_name)
         self.setColsType()
         self.run_data["distance"] = self.rescale(col="distance",min_bd=0)
@@ -301,8 +320,10 @@ class Run:
 
 class RunAnalysis:
     
-    def __init__(self):
+    def __init__(self, settings_file=None):
         self.run_list = {}   #dictionary
+        self.num_run = {}
+        self.settings = settings_file
         self._poly = None
         self._model = None
         self._model_data = None
@@ -314,13 +335,19 @@ class RunAnalysis:
             "Enzo": [["speed","power"],["cadence","ideal_speed"]]
         }
     
+    def addSettings(self, settings_file):
+        self.settings = settings_file
+    
     def addRun(self, run=None, file_name=None, cond_file=None, replace=False):
         '''
         run: Run Object
         add a Run object to the dictionary
         '''
         if file_name is not None:
-            run = Run(file_name,cond_file)
+            if self.settings is not None:
+                run = Run(file_name=file_name,settings_file=self.settings)
+            else:
+                run = Run(file_name=file_name,cond_file=cond_file)
         if (replace==False and run.id_run not in self.run_list) or replace==True:
             self.run_list[run.id_run] = run
         else:
@@ -333,12 +360,14 @@ class RunAnalysis:
         '''
         self.run_list.pop(id_run,'Not found')
 
-    def uploadFolder(self, folder_path, conds_file, replace=False):
+    def uploadFolder(self, folder_path, settings_file=None, replace=False):
         '''
         folder_path : String (Path)
-        conds_file : String (Excel file)
+        settings_file : String (Excel file)
         upload all races that are in a folder
         '''
+        if self.settings is None:
+            self.settings = settings_file
         # run = Run()
         # run.bike_info.getInfoFromExcel(conds_file)
         for file in os.listdir(folder_path):
@@ -352,7 +381,7 @@ class RunAnalysis:
                 # print(run_path)
                 # run.readRun(file_name=run_path)
                 # self.addRun(run,replace=replace)
-                self.addRun(file_name=run_path,cond_file=conds_file)
+                self.addRun(file_name=run_path)
 
     def plotEach(self, cols=[], export=False):
         '''
@@ -380,12 +409,15 @@ class RunAnalysis:
         '''
         cmap = cm.get_cmap('nipy_spectral')   #choose colormap : 'gist_rainbow', 'jet', 'hsv'
 
+        if export_PDF==True:
+            tmp = ""
+            if isinstance(cols,str):
+                tmp = "_"+cols
+            pdf = PdfPages("comparation"+tmp+".pdf")   #TODO add driver name
         if isinstance(cols,str):
             cols = self._dict_opts[cols]
         if keys==[]:
             keys = self.run_list.keys()
-        if export_PDF==True:
-            pdf = PdfPages("comparation"+".pdf")   #TODO add driver name
         
         delta_max_colors = 0.05   #change this parameter to change color gradient (delta)
         delta_run = 0.9/len(keys)
