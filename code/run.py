@@ -14,7 +14,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import util
 import os
-os.chdir(os.path.dirname(__file__))   #set the right path (could help in vscode cause sometime it is dumb)
+os.chdir(os.path.dirname(__file__))   #set the right path (could help in vscode cause sometimes it is dumb)
 
 class Run:
     

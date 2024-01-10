@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import math
 
-_excel2bikeinfo_attributes = {"Vehicle": "bike", "Driver": "driver", "Wheels": "wheels", "GearBox": "gear_box"}   #conversion from Excel name (in conditions file) to Class name
+_excel2bikeinfo_attributes = {"Vehicle": "bike", "Driver": "driver", "Wheels": "wheels", "GearBox": "gear_box"}   #conversion from Excel name (in conditions file) to BikeInfo attribute name
 
 class Vehicle:
     '''Contains information of a vehicle (bike)'''
