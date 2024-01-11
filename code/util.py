@@ -8,6 +8,7 @@ import os
 
 dtset_path = "../Dataset"
 dtcond_path = "../Dataset/conditions/"
+dtsettings_path = "../Dataset/couples/"
 
 
 def moving_average(vector, filt, amplitude=3, opts='same'):
@@ -81,6 +82,9 @@ def getDatasetPath(driver_name, path_in=None, dataset_path=None):
 
 def getCondPath(file_name):
     return os.path.abspath(os.path.join(os.getcwd(), dtcond_path+file_name)).replace("\\","/")
+
+def getSettingsPath(driver_name):
+    return os.path.abspath(os.path.join(os.getcwd(), dtsettings_path+driver_name+"_settings.xlsx")).replace("\\","/")
 
 def joinPath(folder_path, file_name):
     return os.path.join(folder_path, file_name).replace("\\","/")   # meglio quello sotto

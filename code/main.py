@@ -1,4 +1,13 @@
 '''
+TO READ:
+
+If you want to try/use this code
+please run "main_free.py" INSTEAD OF "main.py"
+Just for safety :)
+'''
+
+
+'''
 Date: 15/11/2023
 cosa fa questo codice?
 prende i dati delle run (che sono salvati in dei file csv) e li rielabora per produrre dei valori
@@ -29,6 +38,10 @@ dataset_path_Matilde = util.getDatasetPath("Matilde")
 dataset_path_Diego = util.getDatasetPath("Diego")
 dataset_path_Enzo = util.getDatasetPath("Enzo")
 
+dtsettings_file_Matilde = util.getSettingsPath("Matilde")
+dtsettings_file_Diego = util.getSettingsPath("Diego")
+dtsettings_file_Enzo = util.getSettingsPath("Enzo")
+
 an_run_Matilde = RunAnalysis()
 an_run_Enzo = RunAnalysis()
 an_run_Diego = RunAnalysis()
@@ -36,25 +49,46 @@ an_run_Diego = RunAnalysis()
 # "BM_130923_AM1.csv"
 
 ## upload an entire folder (Matilde)
-conditions_path = util.getCondPath("Phoenix_Matilde.xlsx")
-an_run_Matilde.uploadFolder(folder_path=dataset_path_Matilde, conds_file=conditions_path)
+# conditions_path = util.getCondPath("Phoenix_Matilde.xlsx")
+an_run_Matilde.uploadFolder(folder_path=dataset_path_Matilde, settings_file=dtsettings_file_Matilde)
 
 an_run_Matilde.comparation(cols="Matilde", export_PDF=False, show=True, vis_max=["speed"])   #comparation between specified or default run with complete arbitrariness on the management of graphs
 
 ## upload an entire folder (Enzo)
-conditions_path = util.getCondPath("Phoenix_Enzo.xlsx")
-an_run_Enzo.uploadFolder(folder_path=dataset_path_Enzo, conds_file=conditions_path)
+# conditions_path = util.getCondPath("Phoenix_Enzo.xlsx")
+an_run_Enzo.uploadFolder(folder_path=dataset_path_Enzo, settings_file=dtsettings_file_Enzo)
 
 an_run_Enzo.comparation(cols="Enzo", export_PDF=False, show=True, vis_max=["speed"])
 
 ## upload an entire folder (Diego)
-conditions_path = util.getCondPath("Cerberus_Diego.xlsx")
-an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, conds_file=conditions_path, replace=False)
+# conditions_path = util.getCondPath("Cerberus_Diego.xlsx")
+an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, settings_file=dtsettings_file_Diego, replace=False)
 
+# comparate some races (Diego)
 # an_run_Diego.plotEach()
 an_run_Diego.comparation(cols="Diego", export_PDF=True, show=True, vis_max=["speed"])
 
 #___________________
+# # upload a single run
+# file_name = util.joinPath(dataset_path_Diego, "Diego_15_09_2023_AM_2.csv")
+# cond_file = util.getCondPath("Cerberus_Diego.xlsx")
+# # {
+# run = Run(file_name=file_name, cond_file=cond_file)
+# #or, better
+# # run = Run(file_name=file_name,settings_file=dtsettings_file_Diego)
+# an_run_Diego.addRun(run=run)
+# # }
+# #or, better and better, just
+# # an_run_Diego.addSettings(settings_file=dtsettings_file_Diego)
+# # an_run_Diego.addRun(file_name=file_name)
+
+
+# The following examples could be wrong or inaccurate
+
+#####################################
+#TODO : correggere gli esempi
+#####################################
+
 ## example of uploading a single run (Matilde)
 # run1 = Run()
 # file_name = util.joinPath(dataset_path_Matilde, "Matilde_15_09_2023_AM.csv")
@@ -81,12 +115,12 @@ an_run_Diego.comparation(cols="Diego", export_PDF=True, show=True, vis_max=["spe
 #___________________
 ## Run object : manual initialization
 #
-# for Matilde
+# # for Matilde
 # gb1 = GearBox(gear_box=[40,35,31,27,24,21,19,17,15,14,13,12], chainring=108, sec_ratio=[38,18])
 # wl1 = Wheels(tyre="Michelin-blue", radius=0.23157)
 # bk1 = BikeInfo(Vehicle("Phoenix"), Driver("Matilde"), wl1, gb1)
 # run1.setBikeInfo(bk1)
-# for Diego:
+# # for Diego:
 # gb3 = GearBox(gear_box=[32,28,24,21,19,17,15], chainring=60, sec_ratio=[54,17])
 # wl3 = Wheels("Michelin-blue",None,0.23157,None,None)
 # bk3 = BikeInfo(Vehicle("Cerberus"),Driver("Diego"),wl3,gb3)

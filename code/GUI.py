@@ -1,3 +1,11 @@
+'''
+TO READ:
+
+If you want to try/use interface
+please run "GUI_free.py" INSTEAD OF "GUI.py"
+Just for safety :)
+'''
+
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
