@@ -11,10 +11,11 @@ from tkinter import ttk
 from tkinter import filedialog
 from run import *
 import os
+import util
 os.chdir(os.path.dirname(__file__))
 
-initialdir_file = "../Dataset"
-initialdir_cond = "../Dataset/couples"
+initialdir_file = util.dtset_path
+initialdir_cond = util.dtsettings_path   #"../Dataset/couples"
 
 def browseFile(entry, initialdir=os.getcwd()):
     file_selected = filedialog.askopenfilename(initialdir=initialdir, title="Select file")   #, filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
@@ -165,7 +166,7 @@ def optsSelection(root):
     opts_strvar.trace_add("write", toggle_selezione)
     opts_var = opts_strvar.get()
 
-def goAnalyze(export):
+def goAnalyze(export, vis_max):
     global frame_list, select_run_list, opts_strvar
     keys = [run_id for run_id, var in zip(analysis.run_list.keys(),select_run_list) if var.get() != 0]
     cols = []
@@ -178,7 +179,11 @@ def goAnalyze(export):
             cols="def"
     if export.get()!=0:
         export = True
-    analysis.comparation(keys=keys,cols=cols,export_PDF=export)
+    if vis_max.get()!=0:
+        vis_max = ["speed"]
+    else:
+        vis_max = []
+    analysis.comparation(keys=keys,cols=cols,export_PDF=export,vis_max=vis_max)
 
 def go(window):
     window.destroy()
@@ -206,11 +211,19 @@ def go(window):
     add_button = Button(root, text="Add Plot", command=lambda: create_frame_with_button(root))
     add_button.pack(pady=5)
     
-    var = IntVar()
-    export_button = Checkbutton(root, text="Export PDF", variable=var)
-    export_button.pack(pady=5)
+    chk_frame = Frame(root)
+    chk_frame.pack(pady=5)
+    exp = IntVar()
+    export_button = Checkbutton(chk_frame, text="Export PDF", variable=exp)
+    # export_button.pack(pady=5)
+    export_button.grid(row=0,column=0)
+
+    vzmax = IntVar()
+    vis_button = Checkbutton(chk_frame, text="visualize max (speed)", variable=vzmax)
+    # export_button.pack(pady=5)
+    vis_button.grid(row=0,column=1)
     
-    go_button = Button(root, text="Let's go!", command=lambda: goAnalyze(var))
+    go_button = Button(root, text="Let's go!", command=lambda: goAnalyze(exp,vzmax))
     go_button.pack(pady=5)
     
     frame_opts = LabelFrame(root,text="choose default plot scheme")

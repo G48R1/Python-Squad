@@ -55,8 +55,13 @@ an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, settings_file=dtsettin
 
 
 # comparate some races
-an_run_Diego.comparation(keys=["Diego_15_09_2023_PM_2","Diego_16_09_2023_AM_2"], cols="Diego", export_PDF=True, show=True, vis_max=["speed"])
+an_run_Diego.comparation(keys=["Diego_15_09_2023_PM_2","Diego_16_09_2023_AM_2"], cols="Diego", export_PDF=True,export_PNG=True, show=True, vis_max=["speed","power"])
 
+# an_run_Diego.rmRun("Diego_12_09_2023_AM")
 an_run_Diego.calcAvgRun()
+
 # plot the average run
-an_run_Diego.run_list["avg_run"].plot()
+an_run_Diego.run_list["avg_run"].plot(export=True)
+# an_run_Diego.run_list["avg_run"].calcDisplacement()
+# print("disp:  "+str(an_run_Diego.run_list["avg_run"].disp))
+

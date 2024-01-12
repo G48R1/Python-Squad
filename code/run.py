@@ -209,6 +209,9 @@ class Run:
         rd['gear'] = pd.to_numeric(rd['gear'],downcast='integer')
         self.calcAvgValues()
     
+    def calcDisplacement(self):
+        self.disp = np.mean(abs(self.run_data['speed'] - self.run_data['ideal_speed']) / self.run_data['speed'])
+    
     def setBounds(self, lwbd=2, upbd=2, all=False):   #actually the option 'all' it's not necessary
         '''
         lwbd: Int
@@ -273,7 +276,8 @@ class Run:
         plt.title("Data: run "+self.id_run)
         plt.legend()
         if export==True:
-            plt.savefig(self.id_run+".pdf")
+            pdfexport_path = util.joinPath(util.pdfexport_path,self.id_run)
+            plt.savefig(pdfexport_path+".pdf")
         if show==True:
             plt.show()
     
@@ -281,8 +285,9 @@ class Run:
         '''
         export PDF with graphs of principal cols
         '''
+        pdfexport_path = util.joinPath(util.pdfexport_path,self.id_run)
         # Create an PdfPages object to save multiple plots in a single PDF
-        with PdfPages(self.id_run+'.pdf') as pdf:
+        with PdfPages(pdfexport_path+'.pdf') as pdf:
             plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
             if "ideal_speed" in self.indexes():
                 plt.plot(self.run_data["distance"],self.run_data["ideal_speed"],label="ideal speed")
@@ -413,17 +418,20 @@ class RunAnalysis:
             tmp = ""
             if isinstance(cols,str):
                 tmp = "_"+cols
-            pdf = PdfPages("comparation"+tmp+".pdf")   #TODO add driver name
+            pdfexport_path = util.joinPath(util.pdfexport_path,"comparation"+tmp+".pdf")
+            pdf = PdfPages(pdfexport_path)   #TODO add driver name
         if isinstance(cols,str):
             cols = self._dict_opts[cols]
         if keys==[]:
             keys = self.run_list.keys()
         
-        delta_max_colors = 0.05   #change this parameter to change color gradient (delta)
-        delta_run = 0.9/len(keys)
+        delta_max_colors = 0.075   #change this parameter to change color gradient (delta) [0.05,0.1]
+        a = 0.05
+        b = 0.95
+        delta_run = (b-a)/len(keys)
         delta_colors = min(delta_run/len(cols), delta_max_colors)
         delta_colors = np.linspace(0,delta_run,int((delta_run - 0) / delta_colors + 1))
-        delta_run = np.linspace(0.05,0.95,int(0.9 / delta_run + 1))
+        delta_run = np.linspace(a,b,int((b-a) / delta_run + 1))
         alpha = util.f_alpha(len(keys))
         
         for plot in cols:
@@ -474,7 +482,8 @@ class RunAnalysis:
                     fname = plot[0]
                     for col in plot[1:]:
                         fname = fname + "_" + col
-                    plt.savefig(fname=fname+".png")
+                        fpath = util.joinPath(util.pdfexport_path,fname)
+                    plt.savefig(fname=fpath+".png")
                 if show==True:
                     plt.show()
                 plt.close()
@@ -514,13 +523,20 @@ class RunAnalysis:
         for run in self.run_list.values():
             n_data = min(n_data, run.n_data)
         for run in self.run_list.values():   #tolgo i dati all'inizio (assumo che i dati alla fine siano sincronizzati)
-            run.setBounds(lwbd=run.n_data-n_data)
+            run.setBounds(lwbd=run.n_data-n_data,upbd=0)
         rlv = list(self.run_list.values())
         count_index = {}
         avg_run = Run()
         avg_run.id_run = "avg_run"
         avg_run.run_data = rlv[0].run_data
         avg_run.n_data = n_data
+        notnan_disp = 0
+        if np.isnan(rlv[0].disp):
+            avg_run.disp = 0
+        else:
+            avg_run.disp = rlv[0].disp
+            notnan_disp = notnan_disp + 1
+        # print("d:  "+str(avg_run.disp))
         cols = avg_run.indexes()
         cols = np.delete(cols, np.where(cols == "timestamp"))
         cols = np.delete(cols, np.where(cols == "distance"))
@@ -530,6 +546,11 @@ class RunAnalysis:
             run_cols = run.indexes()
             run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
             run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
+            
+            if not np.isnan(run.disp):
+                avg_run.disp = avg_run.disp + run.disp
+                notnan_disp = notnan_disp + 1
+            # print(avg_run.disp)
 
             for col in run_cols:
                 if col not in cols:
@@ -540,11 +561,14 @@ class RunAnalysis:
                     count_index[col] = count_index[col]+1
         for col in cols:
             avg_run.run_data[col] = avg_run.run_data[col]/count_index[col]
+        # print("avg disp:  "+str(avg_run.disp))
+        # print("not nan:  "+str(notnan_disp))
+        avg_run.disp = avg_run.disp/notnan_disp
         
         avg_run.calcAvgValues()
         self.addRun(avg_run)
 
-    def generateCol(self, col="power", avg_value=None, std_value=None, std_perc=None):
+    def generateCol(self, col="power", avg_value=None, std_value=None, std_perc=None):   #TODO inserire un transitorio (logaritmo,esponenziale,radice)
         '''
         col: String (Index) default: power
         avg_value: Float
@@ -563,6 +587,7 @@ class RunAnalysis:
         scatter_factor = (1-std_perc) + (2*std_perc)*np.random.random(self.run_list["avg_run"].n_data)   #(self.run_list["Diego_13_09_2023_AM_2.csv"].n_data)
         return scatter_factor*avg_value
 
+##############################################################################################################
     def modeling(self, degree=2, input_values=['power', 'heart_rate'], output_value="speed", plot=False):
         '''
         degree: Int

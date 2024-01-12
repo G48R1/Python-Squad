@@ -9,7 +9,7 @@ import os
 dtset_path = "../Dataset"
 dtcond_path = "../Dataset/conditions/"
 dtsettings_path = "../Dataset/couples/"
-
+pdfexport_path = "../Plots&Analysis"
 
 def moving_average(vector, filt, amplitude=3, opts='same'):
     '''moving average filter
@@ -87,8 +87,8 @@ def getSettingsPath(driver_name):
     return os.path.abspath(os.path.join(os.getcwd(), dtsettings_path+driver_name+"_settings.xlsx")).replace("\\","/")
 
 def joinPath(folder_path, file_name):
-    return os.path.join(folder_path, file_name).replace("\\","/")   # meglio quello sotto
-    # return os.path.abspath(os.path.join(folder_path, file_name)).replace("\\","/")
+    # return os.path.join(folder_path, file_name).replace("\\","/")   # meglio quello sotto
+    return os.path.abspath(os.path.join(folder_path, file_name)).replace("\\","/")
 
 def f_alpha(n, half=5):
     '''
