@@ -48,17 +48,17 @@ an_run_Diego = RunAnalysis()
 
 # "BM_130923_AM1.csv"
 
-## upload an entire folder (Matilde)
-# conditions_path = util.getCondPath("Phoenix_Matilde.xlsx")
-an_run_Matilde.uploadFolder(folder_path=dataset_path_Matilde, settings_file=dtsettings_file_Matilde)
+# ## upload an entire folder (Matilde)
+# # conditions_path = util.getCondPath("Phoenix_Matilde.xlsx")
+# an_run_Matilde.uploadFolder(folder_path=dataset_path_Matilde, settings_file=dtsettings_file_Matilde)
 
-an_run_Matilde.comparation(cols="Matilde", export_PDF=False, show=True, vis_max=["speed"])   #comparation between specified or default run with complete arbitrariness on the management of graphs
+# an_run_Matilde.comparation(cols="Matilde", export_PDF=False, show=True, vis_max=["speed"])   #comparation between specified or default run with complete arbitrariness on the management of graphs
 
-## upload an entire folder (Enzo)
-# conditions_path = util.getCondPath("Phoenix_Enzo.xlsx")
-an_run_Enzo.uploadFolder(folder_path=dataset_path_Enzo, settings_file=dtsettings_file_Enzo)
+# ## upload an entire folder (Enzo)
+# # conditions_path = util.getCondPath("Phoenix_Enzo.xlsx")
+# an_run_Enzo.uploadFolder(folder_path=dataset_path_Enzo, settings_file=dtsettings_file_Enzo)
 
-an_run_Enzo.comparation(cols="Enzo", export_PDF=False, show=True, vis_max=["speed"])
+# an_run_Enzo.comparation(cols="Enzo", export_PDF=False, show=True, vis_max=["speed"])
 
 ## upload an entire folder (Diego)
 # conditions_path = util.getCondPath("Cerberus_Diego.xlsx")
@@ -66,7 +66,12 @@ an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, settings_file=dtsettin
 
 # comparate some races (Diego)
 # an_run_Diego.plotEach()
-an_run_Diego.comparation(cols="Diego", export_PDF=True, show=True, vis_max=["speed"])
+#an_run_Diego.comparation(cols="Diego", export_PDF=True, show=True, vis_max=["speed"])
+# an_run_Diego.calcAvgRun2()
+an_run_Diego.rmRun("Diego_12_09_2023_AM") #è una run troppo corta
+an_run_Diego.calcAvgRun()
+an_run_Diego.comparation(cols="Diego", export_PDF=False, show=True) #, vis_max=["speed"])
+#["Diego_15_09_2023_AM_2"]
 
 #___________________
 # # upload a single run

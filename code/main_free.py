@@ -28,7 +28,7 @@ import os
 os.chdir(os.path.dirname(__file__))    #path della cartella che contiene il progetto
 
 
-## do not delete ##
+## do not delete ##  useful/necessary variables
 #########################################################
 dataset_path_Matilde = util.getDatasetPath("Matilde")
 dataset_path_Diego = util.getDatasetPath("Diego")
@@ -57,7 +57,7 @@ an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, settings_file=dtsettin
 # comparate some races
 an_run_Diego.comparation(keys=["Diego_15_09_2023_PM_2","Diego_16_09_2023_AM_2"], cols="Diego", export_PDF=True,export_PNG=True, show=True, vis_max=["speed","power"])
 
-# an_run_Diego.rmRun("Diego_12_09_2023_AM")
+an_run_Diego.rmRun("Diego_12_09_2023_AM")
 an_run_Diego.calcAvgRun()
 
 # plot the average run

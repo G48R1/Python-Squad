@@ -78,9 +78,10 @@ def update_numbers():
 
 def delete_frame(frame, index):
     frame.destroy()
-    global frame_list, label_list
+    global frame_list, label_list, checkbutton_vars_list
     del frame_list[index]  # Rimuove il riferimento al frame distrutto
     del label_list[index]  # Rimuove il riferimento alla label distrutta
+    del checkbutton_vars_list[index]
     update_numbers()
 
 def show_selected(selection_label,index):
@@ -195,6 +196,10 @@ def go(window):
     root.iconbitmap("biking.ico")   #logo
     
     global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list
+    print("ciao")
+    analysis.calcAvgRun()
+    # print(analysis.run_list.keys() + "ciao")
+    # print("ciao")
     frame_list = []
     label_list = []
     index_list = ["timestamp","altitude","heart_rate","cadence","distance","speed","power","RPMw_bo_RPMp","ideal_speed","gear"]
