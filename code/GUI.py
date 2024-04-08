@@ -198,8 +198,6 @@ def go(window):
     global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list
     print("ciao")
     analysis.calcAvgRun()
-    # print(analysis.run_list.keys() + "ciao")
-    # print("ciao")
     frame_list = []
     label_list = []
     index_list = ["timestamp","altitude","heart_rate","cadence","distance","speed","power","RPMw_bo_RPMp","ideal_speed","gear"]

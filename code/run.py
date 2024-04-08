@@ -368,7 +368,7 @@ class RunAnalysis:
         remove a Run object from the dictionary
         '''
         self.run_list.pop(id_run,'Not found')
-        # self.calcAvgRun
+        # self.calcAvgRun()
 
     def uploadFolder(self, folder_path, settings_file=None, replace=False):
         '''
@@ -530,7 +530,7 @@ class RunAnalysis:
     #     if len(self.run_list)==1:
             
     
-    def calcAvgRun(self):
+    def calcAvgRunRight(self):
         '''
         (new version)
         preserve original values of the data in all the races
@@ -591,6 +591,79 @@ class RunAnalysis:
         avg_run.calcAvgValues()
         self.addRun(run=avg_run) #,replace=True
         
+    def calcAvgRun(self): #Last Version
+        '''
+        (new version)
+        preserve original values of the data in all the races
+        '''
+        if not self.run_list:
+            print("no run in run_list")
+            return
+        run_list_tmp = copy.deepcopy(self.run_list)
+        n_data = float('inf')
+        for run in run_list_tmp.values():
+            n_data = min(n_data, run.n_data)
+        for run in run_list_tmp.values():   #tolgo i dati all'inizio (assumo che i dati alla fine siano sincronizzati)
+            run.setBounds(lwbd=0,upbd=run.n_data-n_data) #TODO modificare...
+        rlv = list(run_list_tmp.values())
+        count_index = {}
+        avg_run = Run()
+        avg_run.id_run = "avg_run"
+        avg_run.run_data = rlv[0].run_data
+        avg_run.n_data = n_data
+        notnan_disp = 0
+        if np.isnan(rlv[0].disp):
+            avg_run.disp = 0
+        else:
+            avg_run.disp = rlv[0].disp
+            notnan_disp = notnan_disp + 1
+        # print("d:  "+str(avg_run.disp))
+        cols = avg_run.indexes()
+        cols = np.delete(cols, np.where(cols == "timestamp"))
+        cols = np.delete(cols, np.where(cols == "distance"))
+        for col in cols:
+            count_index[col]=np.zeros(avg_run.n_data)
+            for row in range(avg_run.n_data):
+                if not np.isnan(avg_run.run_data.iloc[row][col]):
+                    count_index[col][row] = 1
+        for run in rlv[1:]:
+            run_cols = run.indexes()
+            run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
+            run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
+            
+            if not np.isnan(run.disp):
+                avg_run.disp = avg_run.disp + run.disp
+                notnan_disp = notnan_disp + 1
+            # print(avg_run.disp)
+
+            for col in run_cols:
+                if col not in cols:
+                    avg_run.run_data[col] = run.run_data[col]
+                    count_index[col]=np.zeros(avg_run.n_data)
+                    for row in range(avg_run.n_data):
+                        if not np.isnan(avg_run.run_data.iloc[row][col]):
+                            count_index[col][row] = count_index[col][row] + 1
+                else:
+                    for row in range(avg_run.n_data):
+                        if np.isnan(avg_run.run_data.iloc[row][col]):
+                            avg_run.run_data.at[row,col] = run.run_data.at[row,col]
+                            if not np.isnan(run.run_data.iloc[row][col]):
+                                count_index[col][row] = count_index[col][row] + 1
+                        else:
+                            if not np.isnan(run.run_data.iloc[row][col]):
+                                avg_run.run_data.at[row,col] = avg_run.run_data.at[row,col] + run.run_data.at[row,col]
+                                if not np.isnan(run.run_data.iloc[row][col]):
+                                    count_index[col][row] = count_index[col][row] + 1
+        for col in cols:
+            for row in range(avg_run.n_data):
+                avg_run.run_data.at[row,col] = avg_run.run_data.at[row,col]/count_index[col][row]
+        if notnan_disp==0:
+            avg_run.disp = np.nan
+        else:
+            avg_run.disp = avg_run.disp/notnan_disp
+        
+        avg_run.calcAvgValues()
+        self.addRun(run=avg_run) #,replace=True
     
     def calcAvgRun2(self):   #TODO add BikeInfo
         '''
