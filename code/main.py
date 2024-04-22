@@ -27,6 +27,7 @@ N.B. i path utilizzati in questo codice sono path relativi. Ricordati di non spo
 nulla funzionerà più :)
 '''
 from run import *
+import numpy as np
 import os
 os.chdir(os.path.dirname(__file__))    #path della cartella che contiene il progetto
 #print(os.getcwd())
@@ -41,6 +42,8 @@ dataset_path_Enzo = util.getDatasetPath("Enzo")
 dtsettings_file_Matilde = util.getSettingsPath("Matilde")
 dtsettings_file_Diego = util.getSettingsPath("Diego")
 dtsettings_file_Enzo = util.getSettingsPath("Enzo")
+
+plot_opts_file = util.getPlotOptsPath()
 
 an_run_Matilde = RunAnalysis()
 an_run_Enzo = RunAnalysis()
@@ -70,7 +73,9 @@ an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, settings_file=dtsettin
 # an_run_Diego.calcAvgRun2()
 an_run_Diego.rmRun("Diego_12_09_2023_AM") #è una run troppo corta
 an_run_Diego.calcAvgRun()
-an_run_Diego.comparation(cols="Diego", export_PDF=False, show=True) #, vis_max=["speed"])
+an_run_Diego.comparation(cols="Diego", export_PDF=False, show=True, export_PNG=False) #, vis_max=["speed"])
+# an_run_Diego.comparation(keys=["Diego_15_09_2023_AM_2","avg_run"],cols="Diego", export_PDF=False, show=True, export_PNG=True) #, vis_max=["speed"])
+
 #["Diego_15_09_2023_AM_2"]
 
 #___________________

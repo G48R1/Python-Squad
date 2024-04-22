@@ -326,7 +326,7 @@ class Run:
 
 class RunAnalysis:
     
-    def __init__(self, settings_file=None):
+    def __init__(self, settings_file=None, plot_opts_file=util.getPlotOptsPath()):
         self.run_list = {}   #dictionary
         self.num_run = {}
         self.settings = settings_file
@@ -334,13 +334,17 @@ class RunAnalysis:
         self._model = None
         self._model_data = None
         self._prediction = None
-        self._dict_opts = {
-            "def": [["speed","power","ideal_speed"],["altitude","heart_rate"]],
-            "Diego": [["speed","power"],["altitude","heart_rate"],["speed","ideal_speed"]],
-            "Matilde": [["speed","power"],["power","cadence"]],
-            "Enzo": [["speed","power"],["cadence","ideal_speed"]],
-            "custom": []
-        }
+        self._dict_opts = None
+        self.addDictOpts(plot_opts_file)
+        
+    def addDictOpts(self, plot_opts_file):        
+        self._dict_opts = pd.read_excel(plot_opts_file,index_col=0,header=None).T.to_dict()
+        for key in self._dict_opts.keys():
+            strtmp = list()
+            for val in self._dict_opts[key].values():
+                if val is not np.nan:
+                    strtmp.append(list(val.replace(' ','').split(',')))
+            self._dict_opts[key] = strtmp
     
     def addSettings(self, settings_file):
         self.settings = settings_file
@@ -410,10 +414,10 @@ class RunAnalysis:
             # plt.legend()
             # plt.show()
 
-    def comparation(self, keys=[], cols="def", export_PDF=False, export_PNG=False, show=True, vis_max=[], pdf_name=""):
+    def comparation(self, keys=[], cols="default", export_PDF=False, export_PNG=False, show=True, vis_max=[], pdf_name=""):
         '''
         keys: List of String (run ID)  default: all
-        cols: List of List of Index (String/column name)  default opts: "def", "Diego", "Matilde", "Enzo"
+        cols: List of List of Index (String/column name)  default opts: "default", "Diego", "Matilde", "Enzo"
         vis_max : List of String (Index) [visualize max]
         allow to comparate specified in cols of two or more races (listed in keys)
         '''
@@ -430,6 +434,9 @@ class RunAnalysis:
         if keys==[]:
             keys = self.run_list.keys()
         
+        if cols == []:
+            return
+
         delta_max_colors = 0.075   #change this parameter to change color gradient (delta) [0.05,0.1]
         a = 0.05
         b = 0.95
@@ -455,6 +462,7 @@ class RunAnalysis:
                     flag = True
                     if col=="altitude":
                         plt.plot(run.run_data["distance"],run.rescale(col),label=col+id,color=cmap(delta_run[i]+delta_colors[j]),alpha=alpha_r,linewidth=linewidth_r)
+                        # prove per il posizionamento delle scritte nel plot ai margini (inizio e fine)
                         # h_i = run.run_data.at[0,"altitude"]
                         # h_f = run.run_data.at[run.n_data-1,"altitude"]
                         # # h_min = min(run.run_data["altitude"])
@@ -472,6 +480,7 @@ class RunAnalysis:
                         x = run.run_data[col].idxmax()
                         y = run.run_data.at[x, col]
                         x = run.run_data.at[x,"distance"]
+                        #TODO studiare il posizionamento adattivo dei testi
                         marginx = 0
                         marginy = 3
                         plt.text(x + marginx, y + marginy, col+"_max : " + str("%.2f" % y))
@@ -500,97 +509,12 @@ class RunAnalysis:
                 plt.close()
         if export_PDF==True:
             pdf.close()
-
-    # def export(self):
-    #     # Create an PdfPages object to save multiple plots in a single PDF
-    #     with PdfPages(self.id_run+'.pdf') as pdf:
-    #         plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
-    #         if "ideal_speed" in self.indexes():
-    #             plt.plot(self.run_data["distance"],self.run_data["ideal_speed"],label="ideal speed")
-    #         plt.plot(self.run_data["distance"],self.run_data["power"],label="power")
-    #         max_power = max(self.run_data["power"])*np.ones(self.n_data)
-    #         plt.plot(self.run_data["distance"],max_power,label="power max",alpha=0.5)
-    #         plt.title("Data: run "+self.id_run)
-    #         plt.legend()
-    #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
-    #         plt.close()
-    #         if "heart_rate" in self.indexes():
-    #             plt.plot(self.run_data["distance"],self.run_data["heart_rate"],label="heart rate")
-    #         plt.title("Data: run "+self.id_run)
-    #         plt.legend()
-    #         # Save plot in the PDF file
-    #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
-    #         plt.close()
-
-        
-    # def AvgRunRunTime(self):
+    
+    # def AvgRunRunTime(self): #TODO (maybe)
     #     '''
     #     calculate average run every time a new run is added
     #     '''
-    #     if len(self.run_list)==1:
             
-    
-    def calcAvgRunRight(self):
-        '''
-        (new version)
-        preserve original values of the data in all the races
-        '''
-        if not self.run_list:
-            print("no run in run_list")
-            return
-        run_list_tmp = copy.deepcopy(self.run_list)
-        n_data = float('inf')
-        for run in run_list_tmp.values():
-            n_data = min(n_data, run.n_data)
-        for run in run_list_tmp.values():   #tolgo i dati all'inizio (assumo che i dati alla fine siano sincronizzati)
-            run.setBounds(lwbd=0,upbd=run.n_data-n_data) #TODO modificare...
-        rlv = list(run_list_tmp.values())
-        count_index = {}
-        avg_run = Run()
-        avg_run.id_run = "avg_run"
-        avg_run.run_data = rlv[0].run_data
-        avg_run.n_data = n_data
-        notnan_disp = 0
-        if np.isnan(rlv[0].disp):
-            avg_run.disp = 0
-        else:
-            avg_run.disp = rlv[0].disp
-            notnan_disp = notnan_disp + 1
-        # print("d:  "+str(avg_run.disp))
-        cols = avg_run.indexes()
-        cols = np.delete(cols, np.where(cols == "timestamp"))
-        cols = np.delete(cols, np.where(cols == "distance"))
-        for col in cols:
-            count_index[col] = 1
-        for run in rlv[1:]:
-            run_cols = run.indexes()
-            run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
-            run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
-            
-            if not np.isnan(run.disp):
-                avg_run.disp = avg_run.disp + run.disp
-                notnan_disp = notnan_disp + 1
-            # print(avg_run.disp)
-
-            for col in run_cols:
-                if col not in cols:
-                    avg_run.run_data[col] = run.run_data[col]
-                    count_index[col] = 1
-                else:
-                    avg_run.run_data[col] = avg_run.run_data[col] + run.run_data[col]
-                    count_index[col] = count_index[col]+1
-        for col in cols:
-            avg_run.run_data[col] = avg_run.run_data[col]/count_index[col]
-        # print("avg disp:  "+str(avg_run.disp))
-        # print("not nan:  "+str(notnan_disp))
-        if notnan_disp==0:
-            avg_run.disp = np.nan
-        else:
-            avg_run.disp = avg_run.disp/notnan_disp
-        
-        avg_run.calcAvgValues()
-        self.addRun(run=avg_run) #,replace=True
-        
     def calcAvgRun(self): #Last Version
         '''
         (new version)
@@ -665,67 +589,6 @@ class RunAnalysis:
         avg_run.calcAvgValues()
         self.addRun(run=avg_run) #,replace=True
     
-    def calcAvgRun2(self):   #TODO add BikeInfo
-        '''
-        calculate average run
-        (old version)
-        modify the bounds of the races
-        '''
-        if not self.run_list:
-            print("no run in run_list")
-            return
-        n_data = float('inf')
-        for run in self.run_list.values():
-            n_data = min(n_data, run.n_data)
-        for run in self.run_list.values():   #tolgo i dati all'inizio (assumo che i dati alla fine siano sincronizzati)
-            run.setBounds(lwbd=0,upbd=run.n_data-n_data) #TODO modificare...
-        rlv = list(self.run_list.values())
-        count_index = {}
-        avg_run = Run()
-        avg_run.id_run = "avg_run"
-        avg_run.run_data = rlv[0].run_data
-        avg_run.n_data = n_data
-        notnan_disp = 0
-        if np.isnan(rlv[0].disp):
-            avg_run.disp = 0
-        else:
-            avg_run.disp = rlv[0].disp
-            notnan_disp = notnan_disp + 1
-        # print("d:  "+str(avg_run.disp))
-        cols = avg_run.indexes()
-        cols = np.delete(cols, np.where(cols == "timestamp"))
-        cols = np.delete(cols, np.where(cols == "distance"))
-        for col in cols:
-            count_index[col] = 1
-        for run in rlv[1:]:
-            run_cols = run.indexes()
-            run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
-            run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
-            
-            if not np.isnan(run.disp):
-                avg_run.disp = avg_run.disp + run.disp
-                notnan_disp = notnan_disp + 1
-            # print(avg_run.disp)
-
-            for col in run_cols:
-                if col not in cols:
-                    avg_run.run_data[col] = run.run_data[col]
-                    count_index[col] = 1
-                else:
-                    avg_run.run_data[col] = avg_run.run_data[col] + run.run_data[col]
-                    count_index[col] = count_index[col]+1
-        for col in cols:
-            avg_run.run_data[col] = avg_run.run_data[col]/count_index[col]
-        # print("avg disp:  "+str(avg_run.disp))
-        # print("not nan:  "+str(notnan_disp))
-        if notnan_disp==0:
-            avg_run.disp = np.nan
-        else:
-            avg_run.disp = avg_run.disp/notnan_disp
-        
-        avg_run.calcAvgValues()
-        self.addRun(run=avg_run,replace=True)
-
     def generateCol(self, col="power", avg_value=None, std_value=None, std_perc=None):   #TODO inserire un transitorio (logaritmo,esponenziale,radice)
         '''
         col: String (Index) default: power
@@ -858,4 +721,26 @@ class RunAnalysis:
         if export==True:
             pass
 
-    
+
+    # def export(self): #TO DELETE
+    #     # Create an PdfPages object to save multiple plots in a single PDF
+    #     with PdfPages(self.id_run+'.pdf') as pdf:
+    #         plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
+    #         if "ideal_speed" in self.indexes():
+    #             plt.plot(self.run_data["distance"],self.run_data["ideal_speed"],label="ideal speed")
+    #         plt.plot(self.run_data["distance"],self.run_data["power"],label="power")
+    #         max_power = max(self.run_data["power"])*np.ones(self.n_data)
+    #         plt.plot(self.run_data["distance"],max_power,label="power max",alpha=0.5)
+    #         plt.title("Data: run "+self.id_run)
+    #         plt.legend()
+    #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
+    #         plt.close()
+    #         if "heart_rate" in self.indexes():
+    #             plt.plot(self.run_data["distance"],self.run_data["heart_rate"],label="heart rate")
+    #         plt.title("Data: run "+self.id_run)
+    #         plt.legend()
+    #         # Save plot in the PDF file
+    #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
+    #         plt.close()
+
+

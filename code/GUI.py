@@ -156,7 +156,8 @@ def toggle_selezione(*args):
 def optsSelection(root):
     # Creazione dei Checkbutton
     global opts_var, opts_strvar, last_selected
-    opts_list = ["def","Diego","Matilde","Enzo"]
+    opts_list = list(analysis._dict_opts.keys())
+    # opts_list = ["default","Diego","Matilde","Enzo"]
     opts_strvar = StringVar()
     last_selected = StringVar(value="")  # Variabile di tracciamento per tenere traccia dell'ultimo pulsante selezionato
     for i in range(len(opts_list)):
@@ -177,7 +178,7 @@ def goAnalyze(export, vis_max):
         for index in range(len(frame_list)):
             cols.append(get_selected_values(index))
         if cols==[]:
-            cols="def"
+            cols="default"
     if export.get()!=0:
         export = True
     if vis_max.get()!=0:
@@ -196,8 +197,8 @@ def go(window):
     root.iconbitmap("biking.ico")   #logo
     
     global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list
-    print("ciao")
     analysis.calcAvgRun()
+    print(analysis.run_list.keys())
     frame_list = []
     label_list = []
     index_list = ["timestamp","altitude","heart_rate","cadence","distance","speed","power","RPMw_bo_RPMp","ideal_speed","gear"]
