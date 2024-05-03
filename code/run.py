@@ -336,6 +336,7 @@ class RunAnalysis:
         self._prediction = None
         self._dict_opts = None
         self.addDictOpts(plot_opts_file)
+        self.flag = False
         
     def addDictOpts(self, plot_opts_file):        
         self._dict_opts = pd.read_excel(plot_opts_file,index_col=0,header=None).T.to_dict()
@@ -414,25 +415,31 @@ class RunAnalysis:
             # plt.legend()
             # plt.show()
 
-    def comparation(self, keys=[], cols="default", export_PDF=False, export_PNG=False, show=True, vis_max=[], pdf_name=""):
+    def comparation(self, keys=[], cols="default", export_PDF=False, export_PNG=False, show=True, vis_max=[], pdf_name="", filter=False):
         '''
         keys: List of String (run ID)  default: all
-        cols: List of List of Index (String/column name)  default opts: "default", "Diego", "Matilde", "Enzo"
+        cols: List of List of Index (String/column name)  default opts: "default", "Diego", "Matilde", "Enzo", "custom"
         vis_max : List of String (Index) [visualize max]
         allow to comparate specified in cols of two or more races (listed in keys)
         '''
+        if self.flag==False and filter!=False:
+            self.filtering(filter)
+            self.flag = True
         cmap = cm.get_cmap('nipy_spectral')   #choose colormap : 'gist_rainbow', 'jet', 'hsv'
 
+        if keys==[]:
+            keys = list(self.run_list.keys())
         if export_PDF==True:
-            tmp = ""
-            if isinstance(cols,str):
-                tmp = "_"+cols
-            pdfexport_path = util.joinPath(util.pdfexport_path,"comparation"+tmp+".pdf")
+            if pdf_name == "":
+                pdf_name = keys[0]
+                for key in keys[1:]:
+                    pdf_name = pdf_name + "_" + key
+                if isinstance(cols,str):
+                    pdf_name = pdf_name + "_" + cols
+            pdfexport_path = util.joinPath(util.pdfexport_path,pdf_name+".pdf")
             pdf = PdfPages(pdfexport_path)   #TODO add driver name
         if isinstance(cols,str):
             cols = self._dict_opts[cols]
-        if keys==[]:
-            keys = self.run_list.keys()
         
         if cols == []:
             return
@@ -456,7 +463,8 @@ class RunAnalysis:
                 if run.id_run=="avg_run":
                     alpha_r = 1  #incremento l'opacità della run media
                     linewidth_r = 1.4
-                id = " run "+ str(i+1)
+                # id = " run "+ str(i+1)
+                id = " "+ ".".join(key.rsplit('.',2)[-2:])
                 plot_cols = list(set(plot).intersection(run.indexes()))
                 for j, col in enumerate(plot_cols):
                     flag = True
@@ -588,7 +596,25 @@ class RunAnalysis:
         
         avg_run.calcAvgValues()
         self.addRun(run=avg_run) #,replace=True
-    
+
+    def filtering(self,filt = "medium"):
+        '''
+        filt : "rough", "medium", "extra" or a list of weights
+        '''
+        if filt == "rough":
+            filt = [0.05, 0.9, 0.05]
+        elif filt == "medium":
+            filt = [0.1, 0.8, 0.1]
+        elif filt == "extra":
+            filt = [0.05, 0.1, 0.7, 0.1, 0.05]
+        else:
+            filt = list(filt)
+        run_list_tmp = self.run_list
+        for run in run_list_tmp.values():
+            for col in run.run_data.columns:
+                if col != "gear" and col != "distance":
+                    run.run_data[col] = util.moving_average(run.run_data[col],filt)
+
     def generateCol(self, col="power", avg_value=None, std_value=None, std_perc=None):   #TODO inserire un transitorio (logaritmo,esponenziale,radice)
         '''
         col: String (Index) default: power

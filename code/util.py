@@ -28,7 +28,7 @@ def moving_average(vector, filt, amplitude=3, opts='same'):
     else:
         filt_sum = sum(filt)
         if filt_sum != 1:
-            for i in len(filt):
+            for i in range(len(filt)):
                 filt[i] = filt[i]/filt_sum   #normalization of the vector
         
     V = np.convolve(vector,filt,opts)

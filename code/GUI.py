@@ -157,7 +157,7 @@ def optsSelection(root):
     # Creazione dei Checkbutton
     global opts_var, opts_strvar, last_selected
     opts_list = list(analysis._dict_opts.keys())
-    # opts_list = ["default","Diego","Matilde","Enzo"]
+    # opts_list = ["default","Diego","Matilde","Enzo","custom"]
     opts_strvar = StringVar()
     last_selected = StringVar(value="")  # Variabile di tracciamento per tenere traccia dell'ultimo pulsante selezionato
     for i in range(len(opts_list)):
@@ -168,7 +168,7 @@ def optsSelection(root):
     opts_strvar.trace_add("write", toggle_selezione)
     opts_var = opts_strvar.get()
 
-def goAnalyze(export, vis_max):
+def goAnalyze(export, vis_max, pdf_name):
     global frame_list, select_run_list, opts_strvar
     keys = [run_id for run_id, var in zip(analysis.run_list.keys(),select_run_list) if var.get() != 0]
     cols = []
@@ -185,7 +185,7 @@ def goAnalyze(export, vis_max):
         vis_max = ["speed"]
     else:
         vis_max = []
-    analysis.comparation(keys=keys,cols=cols,export_PDF=export,vis_max=vis_max)
+    analysis.comparation(keys=keys,cols=cols,export_PDF=export,vis_max=vis_max,pdf_name=pdf_name.get())
 
 def go(window):
     window.destroy()
@@ -198,7 +198,6 @@ def go(window):
     
     global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list
     analysis.calcAvgRun()
-    print(analysis.run_list.keys())
     frame_list = []
     label_list = []
     index_list = ["timestamp","altitude","heart_rate","cadence","distance","speed","power","RPMw_bo_RPMp","ideal_speed","gear"]
@@ -221,13 +220,19 @@ def go(window):
     export_button = Checkbutton(chk_frame, text="Export PDF", variable=exp)
     # export_button.pack(pady=5)
     export_button.grid(row=0,column=0)
+    label = Label(chk_frame, text="pdf name: ")
+    label.grid(row=1,column=0)
+    pdf_name = StringVar()
+    entry_pdf_name = ttk.Entry(chk_frame, width=50, textvariable=pdf_name)
+    entry_pdf_name.grid(row=1,column=1)
+    # entry_pdf_name.pack(pady=5) #, sticky=NSEW)
 
     vzmax = IntVar()
     vis_button = Checkbutton(chk_frame, text="visualize max (speed)", variable=vzmax)
     # export_button.pack(pady=5)
     vis_button.grid(row=0,column=1)
     
-    go_button = Button(root, text="Let's go!", command=lambda: goAnalyze(exp,vzmax))
+    go_button = Button(root, text="Let's go!", command=lambda: goAnalyze(exp,vzmax,pdf_name))
     go_button.pack(pady=5)
     
     frame_opts = LabelFrame(root,text="choose default plot scheme")
