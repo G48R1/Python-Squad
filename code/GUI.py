@@ -17,6 +17,9 @@ os.chdir(os.path.dirname(__file__))
 initialdir_file = util.dtset_path
 initialdir_cond = util.dtsettings_path   #"../Dataset/couples"
 
+opts_filt_list = ["rough","medium","extra","no filter"]
+
+
 def browseFile(entry, initialdir=os.getcwd()):
     file_selected = filedialog.askopenfilename(initialdir=initialdir, title="Select file")   #, filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
     entry.delete(0, END)  # Cancella il contenuto attuale della casella di inserimento
@@ -169,7 +172,13 @@ def optsSelection(root):
     opts_var = opts_strvar.get()
 
 def goAnalyze(export, vis_max, pdf_name):
-    global frame_list, select_run_list, opts_strvar
+    global frame_list, select_run_list, opts_strvar, opts_filter
+    opts_filter_var = opts_filter.get()
+    tmp = opts_filt_list.copy()
+    tmp.remove("no filter")
+    if opts_filter_var not in tmp:
+        opts_filter_var = False
+
     keys = [run_id for run_id, var in zip(analysis.run_list.keys(),select_run_list) if var.get() != 0]
     cols = []
     if opts_strvar.get()!="":
@@ -185,7 +194,7 @@ def goAnalyze(export, vis_max, pdf_name):
         vis_max = ["speed"]
     else:
         vis_max = []
-    analysis.comparation(keys=keys,cols=cols,export_PDF=export,vis_max=vis_max,pdf_name=pdf_name.get())
+    analysis.comparation(keys=keys,cols=cols,export_PDF=export,vis_max=vis_max,pdf_name=pdf_name.get(),filter=opts_filter_var)
 
 def go(window):
     window.destroy()
@@ -196,7 +205,7 @@ def go(window):
     root.maxsize(1200,900)
     root.iconbitmap("biking.ico")   #logo
     
-    global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list
+    global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list, opts_filter
     analysis.calcAvgRun()
     frame_list = []
     label_list = []
@@ -232,7 +241,21 @@ def go(window):
     # export_button.pack(pady=5)
     vis_button.grid(row=0,column=1)
     
-    go_button = Button(root, text="Let's go!", command=lambda: goAnalyze(exp,vzmax,pdf_name))
+    opts_filter = StringVar()
+    # last_selected = StringVar(value="")  # Variabile di tracciamento per tenere traccia dell'ultimo pulsante selezionato
+    # opts_filt_list = ["rough","medium","extra","no filter"]
+    for i in range(len(opts_filt_list)):
+        radiobutton = ttk.Radiobutton(chk_frame, text=opts_filt_list[i], value=opts_filt_list[i], variable=opts_filter) #, command=lambda: show_selected(selection_label,index))
+        # checkbutton.pack(anchor=W)
+        radiobutton.grid(row=2,column=i)
+    # Collega la funzione toggle_selezione alla variabile di tracciamento
+    # opts_filter.trace_add("write", toggle_selezione)
+    # TODO : controllo variabile inizializzata (valore selezionato)
+    # opts_filter_var = opts_filter.get()
+    # if opts_filter_var == "no filter":
+    #     opts_filter_var = False
+    
+    go_button = Button(root, text="Let's go!", command=lambda: goAnalyze(exp,vzmax,pdf_name))#,opts_filter_var))
     go_button.pack(pady=5)
     
     frame_opts = LabelFrame(root,text="choose default plot scheme")

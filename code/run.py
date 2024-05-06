@@ -16,6 +16,9 @@ from sklearn.metrics import mean_squared_error, r2_score
 import util
 import os
 os.chdir(os.path.dirname(__file__))   #set the right path (could help in vscode cause sometimes it is dumb)
+# df = pd.DataFrame([],index=['A'])
+# df = pd.DataFrame({'A':[np.nan,np.nan,np.nan],'B':[1,2,3]})
+# print(df['A'].isnull().all())
 
 class Run:
     
@@ -612,8 +615,21 @@ class RunAnalysis:
         run_list_tmp = self.run_list
         for run in run_list_tmp.values():
             for col in run.run_data.columns:
+                if run.run_data[col].isnull().all():
+                    continue
                 if col != "gear" and col != "distance":
-                    run.run_data[col] = util.moving_average(run.run_data[col],filt)
+                    valid_values = util.moving_average(run.run_data[col],filt,opts='valid')
+                    tmp = []
+                    for i in range(int((len(filt)-1)/2)):
+                        tmp.append(run.run_data.loc[i,col])
+                    for elt in valid_values:
+                        tmp.append(elt)
+                    for i in range(int((len(filt)-1)/2)-1,-1,-1):
+                        tmp.append(run.run_data.loc[len(run.run_data[col])-1-i,col])
+                    run.run_data[col] = tmp
+            # run.run_data['gear'] = run.run_data.loc[(len(filt)-1)/2:-(len(filt)-1)/2,'gear']
+            # run.run_data['distance'] = run.run_data.loc[1:-2,'distance']
+            # run.run_data.reset_index()
 
     def generateCol(self, col="power", avg_value=None, std_value=None, std_perc=None):   #TODO inserire un transitorio (logaritmo,esponenziale,radice)
         '''
