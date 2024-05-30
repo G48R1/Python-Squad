@@ -38,6 +38,7 @@ class Run:
         self.bike_info = BikeInfo()
         self.run_data = None
         self.n_data = None   #length of run_data
+        self.pos_zero = 0
         self.disp = None   #displacement / dissipation factor
         self.avg_values = {}
         if file_name is not None:
@@ -526,15 +527,41 @@ class RunAnalysis:
     #     calculate average run every time a new run is added
     #     '''
             
-    def calcAvgRun(self): #Last Version
+    def calcAvgRun(self, min_pick="Diego", min_dist="Nevada"): #Last Version
         '''
         (new version)
         preserve original values of the data in all the races
+        min_pick : ... ["Diego","Matilde","Enzo"]
         '''
         if not self.run_list:
             print("no run in run_list")
             return
         run_list_tmp = copy.deepcopy(self.run_list)
+        
+        if isinstance(min_pick,str):
+            if min_pick == "Diego":
+                min_pick = 67
+            elif min_pick == "Matilde":
+                min_pick = 110
+            elif min_pick == "Enzo":
+                min_pick = 105
+        if isinstance(min_dist,str):
+            if min_dist.count("Nevada") >= 1:
+                min_dist = min_dist.count("Nevada")*7800
+            elif min_dist.count("Balocco") >= 1:
+                min_dist = min_dist.count("Balocco")*6600
+            #TODO si potrebbe fare un Excel
+
+        r2_tmp = self.run_list
+        for key, run in r2_tmp.items():
+            run_data = run.run_data
+            if max(run_data["speed"]) < min_pick:
+                run_list_tmp.pop(key)
+            elif run_data["distance"][len(run_data["distance"])-1] - run_data["distance"][0] < min_dist:
+                run_list_tmp.pop(key)
+            elif (run_data["timestamp"][len(run_data["timestamp"])-1] - run_data["timestamp"][0]).total_seconds()/len(run_data["timestamp"]) > 1.1:
+                run_list_tmp.pop(key)
+
         n_data = float('inf')
         for run in run_list_tmp.values():
             n_data = min(n_data, run.n_data)

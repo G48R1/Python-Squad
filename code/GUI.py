@@ -196,7 +196,7 @@ def goAnalyze(export, vis_max, pdf_name):
         vis_max = []
     analysis.comparation(keys=keys,cols=cols,export_PDF=export,vis_max=vis_max,pdf_name=pdf_name.get(),filter=opts_filter_var)
 
-def go(window):
+def go(window,min_pick,min_dist):
     window.destroy()
     root = Tk()
     root.title("Insert data")
@@ -204,9 +204,33 @@ def go(window):
     root.minsize(200,150)
     root.maxsize(1200,900)
     root.iconbitmap("biking.ico")   #logo
-    
     global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list, opts_filter
-    analysis.calcAvgRun()
+
+    try:
+        mp = float(min_pick)
+    except ValueError:
+        mp = False
+    if not mp == False:
+        min_pick = mp
+
+    try:
+        mp = float(min_dist)
+    except ValueError:
+        mp = False
+    if not mp == False:
+        min_dist = mp
+    
+    if min_pick == "":
+        if min_dist == "":
+            analysis.calcAvgRun()
+        else:
+            analysis.calcAvgRun(min_dist=min_dist)
+    else:
+        if min_dist == "":
+            analysis.calcAvgRun(min_pick=min_pick)
+        else:
+            analysis.calcAvgRun(min_pick=min_pick,min_dist=min_dist)
+
     frame_list = []
     label_list = []
     index_list = ["timestamp","altitude","heart_rate","cadence","distance","speed","power","RPMw_bo_RPMp","ideal_speed","gear"]
@@ -308,10 +332,23 @@ next_button = ttk.Button(root, text="Add run", command=lambda: nextRun(analysis,
 next_button.grid(row=2, column=1, padx=5, pady=5)
 # next_button.place(relx=0.4,rely=0.7,anchor=CENTER)
 
-end_button = ttk.Button(root, text="Ok, let's go", command=lambda: go(root))
+end_button = ttk.Button(root, text="Ok, let's go", command=lambda: go(root,min_pick.get(),min_dist.get()))
 # end_button.pack(padx=5, pady=5)
 end_button.grid(row=2, column=2, padx=5, pady=5)
 # end_button.place(relx=0.6,rely=0.7,anchor=CENTER)
+
+label = ttk.Label(root, text="min speed pick : ")
+label.grid(row=3, column=0, padx=5, pady=5) #, sticky=NSEW)
+min_pick = StringVar()
+entry_file = ttk.Entry(root, width=50, textvariable=min_pick)
+entry_file.grid(row=4, column=0, padx=5, pady=5) #, sticky=NSEW)
+
+label = ttk.Label(root, text="min distance : ")
+label.grid(row=3, column=2, padx=5, pady=5) #, sticky=NSEW)
+min_dist = StringVar()
+entry_file = ttk.Entry(root, width=50, textvariable=min_dist)
+entry_file.grid(row=4, column=2, padx=5, pady=5) #, sticky=NSEW)
+
 root.mainloop()
 
 
