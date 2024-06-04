@@ -1,6 +1,9 @@
 from conditions import *
 import numpy as np
+from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
+from itertools import groupby
+from operator import itemgetter
 import copy
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
@@ -36,7 +39,7 @@ class Run:
         self.id_run = None
         self.atm_cond = None
         self.bike_info = BikeInfo()
-        self.run_data = None
+        self.run_data = pd.DataFrame()
         self.n_data = None   #length of run_data
         self.pos_zero = 0
         self.disp = None   #displacement / dissipation factor
@@ -99,6 +102,7 @@ class Run:
         #######
         self.run_data = util.csv2Df(file_name)
         self.setColsType()
+        # self.run_data["distance"] = self.run_data["distance"] - self.run_data.at[0,"distance"]
         self.run_data["distance"] = self.rescale(col="distance",min_bd=0)
         self.n_data = len(self.run_data)
         if cut==True:
@@ -217,7 +221,7 @@ class Run:
     def calcDisplacement(self):
         self.disp = np.mean(abs(self.run_data['speed'] - self.run_data['ideal_speed']) / self.run_data['speed'])
     
-    def setBounds(self, lwbd=2, upbd=2, all=False):   #actually the option 'all' it's not necessary
+    def setBounds(self, lwbd=2, upbd=2, all=False, delete_nan=False):   #actually the option 'all' it's not necessary
         '''
         lwbd: Int
         upbd: Int
@@ -235,6 +239,26 @@ class Run:
         #changing data directly
         data = self.run_data.iloc[lwbd:upbd].values   #selecting the new bounded dataset
         names = self.indexes()   #getting the names of the columns
+        ...
+        if delete_nan == True:
+            i = 0
+            end = False
+            while i < min(5,upbd-lwbd) and not end:
+                j = 1
+                nan = False
+                while j < len(data[0]) and not nan:
+                    if np.isnan(data[0,j]):
+                        data = np.delete(data, (0), axis=0)
+                        nan = True
+                    elif np.isnan(data[len(data)-1,j]):
+                        data = np.delete(data, (len(data)-1), axis=0)
+                        nan = True
+                    else:
+                        j = j+1
+                if nan == False:
+                    end = True
+                i = i+1
+        ...
         self.run_data = pd.DataFrame(data,columns=names)
         self.n_data = len(self.run_data)
         #return self.run_data.iloc[lwbd:upbd]
@@ -526,8 +550,176 @@ class RunAnalysis:
     #     '''
     #     calculate average run every time a new run is added
     #     '''
+    
+    def allDistances(self, run_list):
+        # calcolo l'insieme di tutte le distanze
+        all_dist = []
+        for run in run_list.values():
+            for value in run.run_data["distance"]:
+                all_dist.append(value)
+            # all_dist.append(run.run_data["distance"])
+        # print(all_dist)
+        all_dist.sort()
+        
+        all_dist = np.array(all_dist)
+        only_unique = np.ones(len(all_dist),bool)
+        for i in range(len(all_dist)):
+            if(all_dist[i] == all_dist[i-1]):
+                only_unique[i] = False
+        # print(only_unique)
+        all_dist = all_dist[only_unique]
+        
+        # all_dist = [elt for elt,_ in groupby(all_dist)]  # 6410.0000000001, 6181.1900000000005 e altri si ripetono
+        # all_dist = list(map(itemgetter(0), groupby(all_dist)))
+        # print(all_dist)
+        return all_dist
+        
+    def allValues(self, all_dist, col, dist_col):
+        # interpolo col con spline cubica
+        cs = CubicSpline(dist_col, col)
+        # calcolo valori in all_dist
+        return cs(all_dist)
+    
+    def calcAvgRun(self, min_pick=0, min_dist=0): #Last Version
+        '''
+        (new version)
+        preserve original values of the data in all the races
+        min_pick : ... ["Diego","Matilde","Enzo"]
+        '''
+        if not self.run_list:
+            print("no run in run_list")
+            return
+        run_list_tmp = copy.deepcopy(self.run_list) # lista run utilizzate per calcolare la run media
+        
+        if isinstance(min_pick,str):
+            if min_pick == "Diego":
+                min_pick = 67
+            elif min_pick == "Matilde":
+                min_pick = 110
+            elif min_pick == "Enzo":
+                min_pick = 105
+        if isinstance(min_dist,str):
+            if min_dist.count("Nevada") >= 1:
+                min_dist = min_dist.count("Nevada")*7800
+            elif min_dist.count("Balocco") >= 1:
+                min_dist = min_dist.count("Balocco")*6600
+            #TODO si potrebbe fare un Excel
+
+        r2_tmp = self.run_list
+        for key, run in r2_tmp.items():
+            run_data = run.run_data
+            if max(run_data["speed"]) < min_pick:
+                run_list_tmp.pop(key)
+            elif run_data["distance"][len(run_data["distance"])-1] - run_data["distance"][0] < min_dist:
+                run_list_tmp.pop(key)
+            elif (run_data["timestamp"][len(run_data["timestamp"])-1] - run_data["timestamp"][0]).total_seconds()/len(run_data["timestamp"]) > 1.1:
+                run_list_tmp.pop(key)
+
+        # sovrascrivo run_list_tmp
+        run_list_tmp2 = {}
+        all_dist = self.allDistances(run_list_tmp)
+        for key in run_list_tmp.keys():
+            cols_tmp = run_list_tmp.get(key).run_data.columns
+            cols_tmp = np.delete(cols_tmp, np.where(cols_tmp == "distance"))
+            cols_tmp = np.delete(cols_tmp, np.where(cols_tmp == "timestamp"))
+            run_list_tmp2[key] = Run()
+            run_list_tmp2[key].n_data = len(all_dist)
+            run_list_tmp2[key].run_data["distance"] = all_dist
+            # ...
+            # run_list_tmp2[key] = [0, 1, 2]
+            # ...
+            # print(type(run_list_tmp2[key]))
+            # print(run_list_tmp2[key])
+            # dist_col = list(run_list_tmp[key].run_data["distance"])
+            ...
+            dist_col = np.array(run_list_tmp[key].run_data["distance"])
+            only_unique = np.ones(len(dist_col),bool)
+            for i in range(len(dist_col)):
+                if(dist_col[i] == dist_col[i-1]):
+                    only_unique[i] = False
+            dist_col = dist_col[only_unique]
+            # print(dist_col)
+            for col in cols_tmp:
+                col_series = np.array(run_list_tmp[key].run_data[col])
+                col_series = col_series[only_unique]
+                # print(len(col_series), len(dist_col))
+                # print(col_series, dist_col)
+                run_list_tmp2[key].run_data[col] = self.allValues(all_dist, col_series, dist_col)
+                # print(run_list_tmp2[key].run_data[col])
+        run_list_tmp = run_list_tmp2
+        # print(run_list_tmp.values())
+        # print(run_list_tmp2)
+        # print(run_list_tmp)
+        ...
+        
+        # n_data = float('inf')
+        # for run in run_list_tmp.values():
+        #     n_data = min(n_data, run.n_data)
+        # for run in run_list_tmp.values():   #tolgo i dati all'inizio (assumo che i dati alla fine siano sincronizzati)
+        #     run.setBounds(lwbd=0,upbd=run.n_data-n_data) #TODO modificare...
+        rlv = list(run_list_tmp.values())
+        # print(rlv)
+        count_index = {}
+        avg_run = Run()
+        avg_run.id_run = "avg_run"
+        avg_run.run_data = rlv[0].run_data
+        avg_run.n_data = rlv[0].n_data
+        # avg_run.n_data = n_data
+        notnan_disp = 0
+        if rlv[0].disp is None :
+            avg_run.disp = 0
+        else:
+            avg_run.disp = rlv[0].disp
+            notnan_disp = notnan_disp + 1
+        # print("d:  "+str(avg_run.disp))
+        cols = avg_run.indexes()
+        cols = np.delete(cols, np.where(cols == "timestamp"))
+        cols = np.delete(cols, np.where(cols == "distance"))
+        for col in cols:
+            count_index[col]=np.zeros(avg_run.n_data)
+            for row in range(avg_run.n_data):
+                if not np.isnan(avg_run.run_data.iloc[row][col]):
+                    count_index[col][row] = 1
+        for run in rlv[1:]:
+            run_cols = run.indexes()
+            run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
+            run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
             
-    def calcAvgRun(self, min_pick="Diego", min_dist="Nevada"): #Last Version
+            if run.disp is not None:
+                avg_run.disp = avg_run.disp + run.disp
+                notnan_disp = notnan_disp + 1
+            # print(avg_run.disp)
+
+            for col in run_cols:
+                if col not in cols:
+                    avg_run.run_data[col] = run.run_data[col]
+                    count_index[col]=np.zeros(avg_run.n_data)
+                    for row in range(avg_run.n_data):
+                        if not np.isnan(avg_run.run_data.iloc[row][col]):
+                            count_index[col][row] = count_index[col][row] + 1
+                else:
+                    for row in range(avg_run.n_data):
+                        if np.isnan(avg_run.run_data.iloc[row][col]):
+                            avg_run.run_data.at[row,col] = run.run_data.at[row,col]
+                            if not np.isnan(run.run_data.iloc[row][col]):
+                                count_index[col][row] = count_index[col][row] + 1
+                        else:
+                            if not np.isnan(run.run_data.iloc[row][col]):
+                                avg_run.run_data.at[row,col] = avg_run.run_data.at[row,col] + run.run_data.at[row,col]
+                                if not np.isnan(run.run_data.iloc[row][col]):
+                                    count_index[col][row] = count_index[col][row] + 1
+        for col in cols:
+            for row in range(avg_run.n_data):
+                avg_run.run_data.at[row,col] = avg_run.run_data.at[row,col]/count_index[col][row]
+        if notnan_disp==0:
+            avg_run.disp = np.nan
+        else:
+            avg_run.disp = avg_run.disp/notnan_disp
+        
+        avg_run.calcAvgValues()
+        self.addRun(run=avg_run) #,replace=True
+
+    def calcAvgRunOld(self, min_pick=0, min_dist=0):
         '''
         (new version)
         preserve original values of the data in all the races
@@ -574,7 +766,7 @@ class RunAnalysis:
         avg_run.run_data = rlv[0].run_data
         avg_run.n_data = n_data
         notnan_disp = 0
-        if np.isnan(rlv[0].disp):
+        if rlv[0].disp is None :
             avg_run.disp = 0
         else:
             avg_run.disp = rlv[0].disp
@@ -593,7 +785,7 @@ class RunAnalysis:
             run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
             run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
             
-            if not np.isnan(run.disp):
+            if run.disp is not None:
                 avg_run.disp = avg_run.disp + run.disp
                 notnan_disp = notnan_disp + 1
             # print(avg_run.disp)
@@ -811,5 +1003,4 @@ class RunAnalysis:
     #         # Save plot in the PDF file
     #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
     #         plt.close()
-
 
