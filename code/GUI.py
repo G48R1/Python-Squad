@@ -204,7 +204,7 @@ def go(window,min_pick,min_dist):
     root.minsize(200,150)
     root.maxsize(1200,900)
     root.iconbitmap("biking.ico")   #logo
-    global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list, opts_filter
+    global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list, opts_filter, calc_avgrun
 
     try:
         mp = float(min_pick)
@@ -220,16 +220,17 @@ def go(window,min_pick,min_dist):
     if not mp == False:
         min_dist = mp
     
-    if min_pick == "":
-        if min_dist == "":
-            analysis.calcAvgRun()
+    if calc_avgrun.get() == True:
+        if min_pick == "":
+            if min_dist == "":
+                analysis.calcAvgRun(export=True)
+            else:
+                analysis.calcAvgRun(min_dist=min_dist, export=True)
         else:
-            analysis.calcAvgRun(min_dist=min_dist)
-    else:
-        if min_dist == "":
-            analysis.calcAvgRun(min_pick=min_pick)
-        else:
-            analysis.calcAvgRun(min_pick=min_pick,min_dist=min_dist)
+            if min_dist == "":
+                analysis.calcAvgRun(min_pick=min_pick, export=True)
+            else:
+                analysis.calcAvgRun(min_pick=min_pick,min_dist=min_dist, export=True)
 
     frame_list = []
     label_list = []
@@ -348,6 +349,11 @@ label.grid(row=3, column=2, padx=5, pady=5) #, sticky=NSEW)
 min_dist = StringVar()
 entry_file = ttk.Entry(root, width=50, textvariable=min_dist)
 entry_file.grid(row=4, column=2, padx=5, pady=5) #, sticky=NSEW)
+
+calc_avgrun = IntVar()
+calc_avgrun_button = Checkbutton(root, text="Calculate Avg Run", variable=calc_avgrun)
+calc_avgrun_button.grid(row=4,column=1)
+
 
 root.mainloop()
 

@@ -273,9 +273,12 @@ class Run:
         cols: List of index (String/column name)
         export some cols in a csv file
         '''
+        if cols == "all":
+            cols = [col for col in self.run_data.columns]
         if rows is None:
             rows = np.arange(self.n_data)
         util.writeCsvFile(file_name, self.run_data.iloc[rows][cols].values, cols)
+        # util.Df2csv(file_name.replace(".csv","")+"2.csv", self.run_data.iloc[rows][cols])
     
     def plot(self, cols=[], alt_min_bd=50, export=False, show=True):
         '''
@@ -551,12 +554,18 @@ class RunAnalysis:
     #     calculate average run every time a new run is added
     #     '''
     
+    def allDistances_optimized():
+        # inserimento ordinato scorrendo le run in parallelo
+        pass
+    
     def allDistances(self, run_list):
         # calcolo l'insieme di tutte le distanze
         all_dist = []
+        max_min_run = min([run.run_data.at[run.run_data.shape[0]-1,"distance"] for run in run_list.values()]) # last value of distance
         for run in run_list.values():
             for value in run.run_data["distance"]:
-                all_dist.append(value)
+                if value <= max_min_run:
+                    all_dist.append(value)
             # all_dist.append(run.run_data["distance"])
         # print(all_dist)
         all_dist.sort()
@@ -580,7 +589,7 @@ class RunAnalysis:
         # calcolo valori in all_dist
         return cs(all_dist)
     
-    def calcAvgRun(self, min_pick=0, min_dist=0): #Last Version
+    def calcAvgRun(self, min_pick=0, min_dist=0, export=False): #Last Version
         '''
         (new version)
         preserve original values of the data in all the races
@@ -625,53 +634,29 @@ class RunAnalysis:
             run_list_tmp2[key] = Run()
             run_list_tmp2[key].n_data = len(all_dist)
             run_list_tmp2[key].run_data["distance"] = all_dist
-            # ...
-            # run_list_tmp2[key] = [0, 1, 2]
-            # ...
-            # print(type(run_list_tmp2[key]))
-            # print(run_list_tmp2[key])
-            # dist_col = list(run_list_tmp[key].run_data["distance"])
-            ...
             dist_col = np.array(run_list_tmp[key].run_data["distance"])
             only_unique = np.ones(len(dist_col),bool)
             for i in range(len(dist_col)):
                 if(dist_col[i] == dist_col[i-1]):
                     only_unique[i] = False
             dist_col = dist_col[only_unique]
-            # print(dist_col)
             for col in cols_tmp:
                 col_series = np.array(run_list_tmp[key].run_data[col])
                 col_series = col_series[only_unique]
-                # print(len(col_series), len(dist_col))
-                # print(col_series, dist_col)
                 run_list_tmp2[key].run_data[col] = self.allValues(all_dist, col_series, dist_col)
-                # print(run_list_tmp2[key].run_data[col])
         run_list_tmp = run_list_tmp2
-        # print(run_list_tmp.values())
-        # print(run_list_tmp2)
-        # print(run_list_tmp)
-        ...
-        
-        # n_data = float('inf')
-        # for run in run_list_tmp.values():
-        #     n_data = min(n_data, run.n_data)
-        # for run in run_list_tmp.values():   #tolgo i dati all'inizio (assumo che i dati alla fine siano sincronizzati)
-        #     run.setBounds(lwbd=0,upbd=run.n_data-n_data) #TODO modificare...
         rlv = list(run_list_tmp.values())
-        # print(rlv)
         count_index = {}
         avg_run = Run()
         avg_run.id_run = "avg_run"
         avg_run.run_data = rlv[0].run_data
         avg_run.n_data = rlv[0].n_data
-        # avg_run.n_data = n_data
         notnan_disp = 0
         if rlv[0].disp is None :
             avg_run.disp = 0
         else:
             avg_run.disp = rlv[0].disp
             notnan_disp = notnan_disp + 1
-        # print("d:  "+str(avg_run.disp))
         cols = avg_run.indexes()
         cols = np.delete(cols, np.where(cols == "timestamp"))
         cols = np.delete(cols, np.where(cols == "distance"))
@@ -688,7 +673,6 @@ class RunAnalysis:
             if run.disp is not None:
                 avg_run.disp = avg_run.disp + run.disp
                 notnan_disp = notnan_disp + 1
-            # print(avg_run.disp)
 
             for col in run_cols:
                 if col not in cols:
@@ -718,7 +702,12 @@ class RunAnalysis:
         
         avg_run.calcAvgValues()
         self.addRun(run=avg_run) #,replace=True
-
+        if export == True:
+            file_name = util.getResultsPath("avgrun.csv")
+            # aggiungere sigla driver e circuito
+            # per ora teniamo il nome "avgrun" per tutti in modo da evitare di salvare tanti file
+            avg_run.exportCols(file_name, cols="all")
+            
     def calcAvgRunOld(self, min_pick=0, min_dist=0):
         '''
         (new version)
@@ -1003,4 +992,5 @@ class RunAnalysis:
     #         # Save plot in the PDF file
     #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
     #         plt.close()
+
 

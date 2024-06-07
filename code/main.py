@@ -74,7 +74,7 @@ an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, settings_file=dtsettin
 #an_run_Diego.comparation(cols="Diego", export_PDF=True, show=True, vis_max=["speed"])
 # an_run_Diego.calcAvgRun2()
 an_run_Diego.rmRun("Diego_12_09_2023_AM") #è una run troppo corta
-an_run_Diego.calcAvgRun(min_pick=60, min_dist=0)
+an_run_Diego.calcAvgRun(min_pick=60, min_dist=0, export=True)
 an_run_Diego.comparation(cols="Diego", export_PDF=False, show=True, export_PNG=False,filter="rough",pdf_name="prova_filtro_rough") #, vis_max=["speed"])
 # an_run_Diego.comparation(keys=["Diego_15_09_2023_AM_2","avg_run"],cols="Diego", export_PDF=False, show=True, export_PNG=True) #, vis_max=["speed"])
 

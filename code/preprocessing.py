@@ -47,10 +47,20 @@ def delRows(df, n=None, from_bottom=False):
 
 
 ###################################################################
-# 
+# unire più run in uno stesso file per poter fare confronti in RapidMiner
 ###################################################################
+folder_path = ...
+df = []
+#
+for file in os.listdir(folder_path):
+    if ".csv" in file:
+        df.append(util.csv2Df(util.joinPath(folder_path, file)))
 
-
+for i in range(len(df)):
+    for col in df[i].columns:
+        df[i] = df[i].rename(columns={col:col+str(i+1)})
+df_tot = pd.concat(df, axis=1)
+util.Df2csv(util.getResultsPath("all-inclusive_file.csv"), df_tot)
 
 ###################################################################
 # 

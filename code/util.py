@@ -67,6 +67,12 @@ def writeCsvFile(file_name, data, header):   #TODO TO BE MODIFIED
         writer.writerow(header)
         for row in data:   #TO BE MODIFIED
             writer.writerow(row)
+            
+def Df2csv(file_name, df):
+    '''
+    a differenza di writeCsvFile questa funzione lascia nel csv anche l'id delle righe
+    '''
+    df.to_csv(file_name)
 
 def getDatasetPath(driver_name, path_in=None, dataset_path=None):
     '''
@@ -83,6 +89,9 @@ def getDatasetPath(driver_name, path_in=None, dataset_path=None):
 
 def getCondPath(file_name):
     return os.path.abspath(os.path.join(os.getcwd(), dtcond_path+file_name)).replace("\\","/")
+
+def getResultsPath(file_name):
+    return os.path.abspath(os.path.join(os.getcwd(), pdfexport_path+"/"+file_name)).replace("\\","/")
 
 def getSettingsPath(driver_name):
     return os.path.abspath(os.path.join(os.getcwd(), dtsettings_path+driver_name+"_settings.xlsx")).replace("\\","/")
