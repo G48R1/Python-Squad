@@ -10,7 +10,8 @@ dtset_path = "../Dataset"
 dtcond_path = "../Dataset/conditions/"
 dtsettings_path = "../Dataset/couples/"
 plot_opts_path = "../Dataset/plot_opts/"
-pdfexport_path = "../Plots&Analysis"
+pdfexport_path = "../Plots&Analysis/" # editable
+
 
 def moving_average(vector, filt, amplitude=3, opts='same'):
     '''moving average filter
@@ -91,7 +92,7 @@ def getCondPath(file_name):
     return os.path.abspath(os.path.join(os.getcwd(), dtcond_path+file_name)).replace("\\","/")
 
 def getResultsPath(file_name):
-    return os.path.abspath(os.path.join(os.getcwd(), pdfexport_path+"/"+file_name)).replace("\\","/")
+    return os.path.abspath(os.path.join(os.getcwd(), pdfexport_path+file_name)).replace("\\","/")
 
 def getSettingsPath(driver_name):
     return os.path.abspath(os.path.join(os.getcwd(), dtsettings_path+driver_name+"_settings.xlsx")).replace("\\","/")

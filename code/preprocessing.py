@@ -45,7 +45,6 @@ def delRows(df, n=None, from_bottom=False):
         i = i+1
 
 
-
 ###################################################################
 # unire più run in uno stesso file per poter fare confronti in RapidMiner
 ###################################################################

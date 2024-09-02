@@ -2,8 +2,8 @@ from conditions import *
 import numpy as np
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
-from itertools import groupby
-from operator import itemgetter
+# from itertools import groupby
+# from operator import itemgetter
 import copy
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
@@ -12,8 +12,8 @@ import pandas as pd
 # from nfoursid.nfoursid import NFourSID
 # from nfoursid.state_space import StateSpace
 from sklearn.preprocessing import PolynomialFeatures
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import make_pipeline
+# from sklearn.compose import ColumnTransformer
+# from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import util
@@ -702,7 +702,7 @@ class RunAnalysis:
         
         avg_run.calcAvgValues()
         self.addRun(run=avg_run) #,replace=True
-        if export == True:
+        if export == True:   # esporta il file csv dei valori della avgrun
             file_name = util.getResultsPath("avgrun.csv")
             # aggiungere sigla driver e circuito
             # per ora teniamo il nome "avgrun" per tutti in modo da evitare di salvare tanti file

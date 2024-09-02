@@ -200,9 +200,9 @@ def go(window,min_pick,min_dist):
     window.destroy()
     root = Tk()
     root.title("Insert data")
-    root.geometry("400x300+710+150")   #dimensions of the window + positioning
+    root.geometry("520x340+700+150")   #dimensions of the window + positioning
     root.minsize(200,150)
-    root.maxsize(1200,900)
+    # root.maxsize(1200,900)
     root.iconbitmap("biking.ico")   #logo
     global frame_list, label_list, index_list, checkbutton_vars_list, select_run_list, opts_filter, calc_avgrun
 
@@ -293,7 +293,7 @@ def go(window,min_pick,min_dist):
 # Create the main window
 root = Tk()
 root.title("Run Analysis")
-root.geometry("760x300+400+150")   #dimensions of the window + positioning
+root.geometry("1170x300+175+150")   #dimensions of the window + positioning
 root.minsize(240,180)
 root.maxsize(1200,900)
 root.iconbitmap("biking.ico")   #logo

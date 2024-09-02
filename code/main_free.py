@@ -49,15 +49,15 @@ an_run_Diego = RunAnalysis()
 an_run_Diego.uploadFolder(folder_path=dataset_path_Diego, settings_file=dtsettings_file_Diego)
 
 # upload a single run
-# file_name = util.joinPath(dataset_path_Diego, "Diego_15_09_2023_AM_2.csv")
+# file_name = util.joinPath(dataset_path_Diego, "BM.Dh.150923.1130.csv")
 # an_run_Diego.addSettings(settings_file=dtsettings_file_Diego)
 # an_run_Diego.addRun(file_name=file_name)
 
 
 # comparate some races
-an_run_Diego.comparation(keys=["Diego_15_09_2023_PM_2","Diego_16_09_2023_AM_2"], cols="Diego", export_PDF=True,export_PNG=True, show=True, vis_max=["speed","power"])
+an_run_Diego.comparation(keys=["BM.Dh.150923.1800","BM.Dh.160923.1000"], cols="Diego", export_PDF=True,export_PNG=True, show=True, vis_max=["speed","power"])
 
-an_run_Diego.rmRun("Diego_12_09_2023_AM")
+an_run_Diego.rmRun("BM.Dh.120923.0900")
 an_run_Diego.calcAvgRun()
 
 # plot the average run
