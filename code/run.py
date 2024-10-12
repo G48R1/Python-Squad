@@ -8,6 +8,11 @@ import copy
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
+import util
+import os
+os.chdir(os.path.dirname(__file__))   #set the right path (could help in vscode cause sometimes it is dumb)
+
+######## USEFUL PACKAGES FOR MODELS AND SIMULATIONS ########
 # from nfoursid.kalman import Kalman
 # from nfoursid.nfoursid import NFourSID
 # from nfoursid.state_space import StateSpace
@@ -16,22 +21,19 @@ from sklearn.preprocessing import PolynomialFeatures
 # from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
-import util
-import os
-os.chdir(os.path.dirname(__file__))   #set the right path (could help in vscode cause sometimes it is dumb)
-# df = pd.DataFrame([],index=['A'])
-# df = pd.DataFrame({'A':[np.nan,np.nan,np.nan],'B':[1,2,3]})
-# print(df['A'].isnull().all())
+############################################################
 
 class Run:
     
     def __init__(self, file_name=None, cond_file=None, settings_file=None):
         '''
+        num_id: Int
         id_run: String (file name)
         atm_cond: AtmConditions Object
         bike_info: BikeInfo Object
         run_data: DataFrame
         n_data: Int (number of run_data's rows)
+        pos_zero: Int
         disp: Float (displacement)
         avg_values: Dict
         '''
@@ -41,7 +43,7 @@ class Run:
         self.bike_info = BikeInfo()
         self.run_data = pd.DataFrame()
         self.n_data = None   #length of run_data
-        self.pos_zero = 0
+        self.pos_zero = 0   #starting position (TO IMPLEMENT)
         self.disp = None   #displacement / dissipation factor
         self.avg_values = {}
         if file_name is not None:
@@ -115,9 +117,9 @@ class Run:
         cols : List of String (Index)
         '''
         if cols==[]:
-            cols = self.indexes()
+            cols = self._indexes()
         else:
-            cols = list(set(cols).intersection(self.indexes()))                
+            cols = list(set(cols).intersection(self._indexes()))                
         for index in cols:
             if index == "timestamp":
                 self.run_data['timestamp'] = pd.to_datetime(self.run_data['timestamp'])
@@ -146,14 +148,14 @@ class Run:
             print("length not equal: ",len(col)," not equal to ",self.n_data)
         self.calcAvgValues()
     
-    def indexes(self):
+    def _indexes(self):
         return self.run_data.columns.values
     
     def calcAvgValues(self):
         '''
         calculate average values of each column except for "timestamp" and "distance"
         '''
-        cols = self.indexes()
+        cols = self._indexes()
         cols = np.delete(cols, np.where(cols == "timestamp"))
         cols = np.delete(cols, np.where(cols == "distance"))
         for index in cols:
@@ -238,7 +240,7 @@ class Run:
         upbd = self.n_data - upbd        
         #changing data directly
         data = self.run_data.iloc[lwbd:upbd].values   #selecting the new bounded dataset
-        names = self.indexes()   #getting the names of the columns
+        names = self._indexes()   #getting the names of the columns
         ...
         if delete_nan == True:
             i = 0
@@ -289,7 +291,7 @@ class Run:
         if cols == []:
             cols = ["speed", "ideal_speed", "power", "heart_rate"]
         else:
-            cols = list(set(cols).intersection(self.indexes()))                
+            cols = list(set(cols).intersection(self._indexes()))                
         for col in cols:
             if col=='altitude':
                 plt.plot(self.run_data["distance"],self.rescale(col,alt_min_bd),label=col)
@@ -321,7 +323,7 @@ class Run:
         # Create an PdfPages object to save multiple plots in a single PDF
         with PdfPages(pdfexport_path+'.pdf') as pdf:
             plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
-            if "ideal_speed" in self.indexes():
+            if "ideal_speed" in self._indexes():
                 plt.plot(self.run_data["distance"],self.run_data["ideal_speed"],label="ideal speed")
             plt.plot(self.run_data["distance"],self.run_data["power"],label="power")
             max_power = max(self.run_data["power"])*np.ones(self.n_data)
@@ -330,7 +332,7 @@ class Run:
             plt.legend()
             pdf.savefig(bbox_inches='tight', pad_inches=0.5)
             plt.close()
-            if "heart_rate" in self.indexes():
+            if "heart_rate" in self._indexes():
                 plt.plot(self.run_data["distance"],self.run_data["heart_rate"],label="heart rate")
             plt.title("Data: run "+self.id_run)
             plt.legend()
@@ -440,7 +442,7 @@ class RunAnalysis:
         for run in self.run_list.values():
             run.plot(cols=cols, export=export)
             # for col in cols:
-            #     if col in run.indexes():
+            #     if col in run._indexes():
             #         plt.plot(run.run_data["distance"],run.run_data[col],label=col)
             # plt.title("Data: run "+str(i+1))
             # plt.legend()
@@ -448,10 +450,12 @@ class RunAnalysis:
 
     def comparation(self, keys=[], cols="default", export_PDF=False, export_PNG=False, show=True, vis_max=[], pdf_name="", filter=False):
         '''
-        keys: List of String (run ID)  default: all
-        cols: List of List of Index (String/column name)  default opts: "default", "Diego", "Matilde", "Enzo", "custom"
+        keys : List of String (run ID)  default: all
+        cols : List of List of Index (String/column name) or default opts (String): "default", "Diego", "Matilde", "Enzo", "custom"
         vis_max : List of String (Index) [visualize max]
-        allow to comparate specified in cols of two or more races (listed in keys)
+        pdf_name : String
+        filter : String or List of Double  default (String) values: False, "rough", "medium", "extra". List of weights example: [0.15, 0.7, 0.15] (see filtering() for more info)
+        allow to comparate multiple values specified in cols of two or more races (listed in keys)
         '''
         if self.flag==False and filter!=False:
             self.filtering(filter)
@@ -496,7 +500,7 @@ class RunAnalysis:
                     linewidth_r = 1.4
                 # id = " run "+ str(i+1)
                 id = " "+ ".".join(key.rsplit('.',2)[-2:])
-                plot_cols = list(set(plot).intersection(run.indexes()))
+                plot_cols = list(set(plot).intersection(run._indexes()))
                 for j, col in enumerate(plot_cols):
                     flag = True
                     if col=="altitude":
@@ -554,11 +558,11 @@ class RunAnalysis:
     #     calculate average run every time a new run is added
     #     '''
     
-    def allDistances_optimized():
+    def _allDistances_optimized(): #TODO
         # inserimento ordinato scorrendo le run in parallelo
         pass
     
-    def allDistances(self, run_list):
+    def _allDistances(self, run_list):
         # calcolo l'insieme di tutte le distanze
         all_dist = []
         max_min_run = min([run.run_data.at[run.run_data.shape[0]-1,"distance"] for run in run_list.values()]) # last value of distance
@@ -583,7 +587,7 @@ class RunAnalysis:
         # print(all_dist)
         return all_dist
         
-    def allValues(self, all_dist, col, dist_col):
+    def _allValues(self, all_dist, col, dist_col):
         # interpolo col con spline cubica
         cs = CubicSpline(dist_col, col)
         # calcolo valori in all_dist
@@ -626,7 +630,7 @@ class RunAnalysis:
 
         # sovrascrivo run_list_tmp
         run_list_tmp2 = {}
-        all_dist = self.allDistances(run_list_tmp)
+        all_dist = self._allDistances(run_list_tmp)
         for key in run_list_tmp.keys():
             cols_tmp = run_list_tmp.get(key).run_data.columns
             cols_tmp = np.delete(cols_tmp, np.where(cols_tmp == "distance"))
@@ -643,7 +647,7 @@ class RunAnalysis:
             for col in cols_tmp:
                 col_series = np.array(run_list_tmp[key].run_data[col])
                 col_series = col_series[only_unique]
-                run_list_tmp2[key].run_data[col] = self.allValues(all_dist, col_series, dist_col)
+                run_list_tmp2[key].run_data[col] = self._allValues(all_dist, col_series, dist_col)
         run_list_tmp = run_list_tmp2
         rlv = list(run_list_tmp.values())
         count_index = {}
@@ -657,7 +661,7 @@ class RunAnalysis:
         else:
             avg_run.disp = rlv[0].disp
             notnan_disp = notnan_disp + 1
-        cols = avg_run.indexes()
+        cols = avg_run._indexes()
         cols = np.delete(cols, np.where(cols == "timestamp"))
         cols = np.delete(cols, np.where(cols == "distance"))
         for col in cols:
@@ -666,7 +670,7 @@ class RunAnalysis:
                 if not np.isnan(avg_run.run_data.iloc[row][col]):
                     count_index[col][row] = 1
         for run in rlv[1:]:
-            run_cols = run.indexes()
+            run_cols = run._indexes()
             run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
             run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
             
@@ -761,7 +765,7 @@ class RunAnalysis:
             avg_run.disp = rlv[0].disp
             notnan_disp = notnan_disp + 1
         # print("d:  "+str(avg_run.disp))
-        cols = avg_run.indexes()
+        cols = avg_run._indexes()
         cols = np.delete(cols, np.where(cols == "timestamp"))
         cols = np.delete(cols, np.where(cols == "distance"))
         for col in cols:
@@ -770,7 +774,7 @@ class RunAnalysis:
                 if not np.isnan(avg_run.run_data.iloc[row][col]):
                     count_index[col][row] = 1
         for run in rlv[1:]:
-            run_cols = run.indexes()
+            run_cols = run._indexes()
             run_cols = np.delete(run_cols, np.where(run_cols == "timestamp"))
             run_cols = np.delete(run_cols, np.where(run_cols == "distance"))
             
@@ -810,7 +814,8 @@ class RunAnalysis:
 
     def filtering(self,filt = "medium"):
         '''
-        filt : "rough", "medium", "extra" or a list of weights
+        filt : "rough", "medium", "extra" or a list of weights (ex. [0.15, 0.7, 0.15])
+        please choose an odd length list of weights
         '''
         if filt == "rough":
             filt = [0.05, 0.9, 0.05]
@@ -875,7 +880,7 @@ class RunAnalysis:
         self._prediction = output_value
         for run in self.run_list.values():
             for value in all_values:
-                if value not in run.indexes():
+                if value not in run._indexes():
                     print("no data for \""+value+"\"")
                     return
         
@@ -976,7 +981,7 @@ class RunAnalysis:
     #     # Create an PdfPages object to save multiple plots in a single PDF
     #     with PdfPages(self.id_run+'.pdf') as pdf:
     #         plt.plot(self.run_data["distance"],self.run_data["speed"],label="GPS speed")
-    #         if "ideal_speed" in self.indexes():
+    #         if "ideal_speed" in self._indexes():
     #             plt.plot(self.run_data["distance"],self.run_data["ideal_speed"],label="ideal speed")
     #         plt.plot(self.run_data["distance"],self.run_data["power"],label="power")
     #         max_power = max(self.run_data["power"])*np.ones(self.n_data)
@@ -985,7 +990,7 @@ class RunAnalysis:
     #         plt.legend()
     #         pdf.savefig(bbox_inches='tight', pad_inches=0.5)
     #         plt.close()
-    #         if "heart_rate" in self.indexes():
+    #         if "heart_rate" in self._indexes():
     #             plt.plot(self.run_data["distance"],self.run_data["heart_rate"],label="heart rate")
     #         plt.title("Data: run "+self.id_run)
     #         plt.legend()

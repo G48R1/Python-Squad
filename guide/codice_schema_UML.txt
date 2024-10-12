@@ -21,20 +21,20 @@ struct BikeInfo{
 ..
 +setInfo()
 +getInfoFromExcel()
-+getInfoFromCsv()
+~getInfoFromCsv()
 }
 
-struct Driver{
+struct Driver extends BikeInfo{
 +name
 +weight
--string_attributes
+-_string_attributes
 ..
 +setInfo()
 #getInfoFromMatrix()
 #getInfoFromDict()
 }
 
-struct Vehicle{
+struct Vehicle extends BikeInfo{
 +name
 +chassis_weight
 +hull_weight
@@ -42,32 +42,32 @@ struct Vehicle{
 +inertia
 +leg_traction : bool
 +crank
--string_attributes
+-_string_attributes
 ..
 +setInfo()
 #getInfoFromMatrix()
 #getInfoFromDict()
 }
 
-struct GearBox{
+struct GearBox extends BikeInfo{
 +gear_box : List
 +chainring
 +sec_ratio
--string_attributes
--list_attributes
+-_string_attributes
+-_list_attributes
 ..
 +setInfo()
 #getInfoFromMatrix()
 #getInfoFromDict()
 }
 
-struct Wheels{
+struct Wheels extends BikeInfo{
 +tyre
 +pressure
 +radius
 +rolling_circum
 +inertia
--string_attributes
+-_string_attributes
 ..
 +setInfo()
 #getInfoFromMatrix()
@@ -77,53 +77,83 @@ struct Wheels{
 
 package Analysis_n_Simulation <<Rectangle>>{
 class Run{
++num_id
 +id_run
 +atm_cond : AtmCond
 +bike_info : BikeInfo
 +run_data : Dataframe
 +n_data
++pos_zero
 +disp
 +avg_values : Dict
 __
+#clean()
 +setAtmCond()
++setSettings()
 +setBikeInfo()
 +readRun()
--rescale()
+#setColsType()
++rescale()
 +addCol()
-#calcAvgValues()
-+gearChangeDetect()
+-_indexes()
++calcAvgValues()
+~gearChangeDetect()
 +setBounds()
 +exportCols()
 +plot()
 +export()
++generateCol()
 }
 
 class RunAnalysis extends Run{
 +run_list : Dict
--poly
--model
--model_data
--prediction
--dict_opts
++num_run: Dict
++settings
+-_poly
+-_model
+-_model_data
+-_prediction
+-_dict_opts
 __
++addDictOpts()
++addSettings()
 +addRun()
 +rmRun()
++uploadFolder()
 +plotEach()
 +comparation()
+*avgRunRunTime()
+*_allDistances_optimized()
+-_allDistances()
+-_allValues()
 +calcAvgRun()
++filtering()
 +generateCol()
-+modeling()
-+simulate()
+*modeling()
+*simulate()
 }
 }
 
 package Util <<Rectangle>>{
 class Util{
+#dtset_path
+#dtcond_path
+#dtsettings_path
+#plot_opts_path
+#pdfexport_path
 __
 #movingAvg()
 #readCsvFile()
 #csv2Df()
 #writeCsvFile()
+#Df2csv()
+#getDatasetPath()
+#getCondPath()
+#getResultsPath()
+#getSettingsPath()
+#getPlotOptsPath()
+#joinPath()
+#f_alpha()
 }
 }
 @enduml

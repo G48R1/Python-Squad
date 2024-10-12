@@ -15,7 +15,7 @@ class Vehicle:
         self.frontal_area = frontal_area
         self.inertia = inertia
         self.leg_traction = leg_traction
-        self.crank = crank   #pedivella
+        self.crank = crank   #pedivella (lunghezza)
         self._string_attributes = ["name"]
 
     def setInfo(self,name=None,chassis_weight=None,hull_weight=None,frontal_area=None,inertia=None,leg_traction=None,crank=None):
@@ -282,7 +282,7 @@ class BikeInfo:
                 #     value=""   #you want nan instead of "" (change "getInfoFromCsv" too)
                 obj.getInfoFromMatrix([[attribute,value]],delimiter=';')
 
-    def getInfoFromCsv(self, csv_file):
+    def getInfoFromCsv(self, csv_file): #DEPRECATED
         '''
         csv_file: String (path)
         '''

@@ -1,3 +1,23 @@
+#######
+# UML #
+#######
+
+LEGENDA:
+_
+simboli vuoti: attributi
+simboli pieni: metodi (funzioni)
+_
+colori:
+verde (cerchio): pubblici (free use)
+blu (triangolo): fare attenzione alla combo con altri metodi e all'ordine di utilizzo
+giallo (rombo): come il blu ma più soft. sono utilizzati principalmente dal codice
+rosso (quadrato): privati. attributi e metodi utilizzati esclusivamente dal codice
+nero (cerchio): da finire/(ri)scrivere
+
+##########################
+# COSA SI PUò MODIFICARE #
+##########################
+
 -nella cartella code:
 GUI_free
 main_free

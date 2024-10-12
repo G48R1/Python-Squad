@@ -1,5 +1,13 @@
 '''
+COMPLETAMENTE DA SCRIVERE. È SOLO UNA BOZZA
+
 PREPROCESSING
+
+Questo codice nasce con l'idea di preprocessare i file CSV dei dati dei sensori montati sulle bici del Team Policumbent.
+Utilizzo:
+si seleziona un file o un'intera cartella,
+si scelgono le funzioni di preprocessing che si vogliono utilizzare
+e si fa partire il codice
 '''
 
 import os
